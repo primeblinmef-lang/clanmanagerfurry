@@ -1,0 +1,3259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Клан-Менеджер | Stalzone</title>
+<style>
+  :root{
+    --bg:#050607; --bg-2:#0a0c0e; --sidebar:#08090b;
+    --panel:#111315; --panel-2:#17191c;
+    --line:#1e2124; --line-2:#2a2e33;
+    --text:#e6e8ea; --muted:#848a92; --muted-2:#565c64;
+    --bright:#f2f4f6;
+    --yellow:#ffd93d;
+    --shadow-1:0 4px 22px rgba(0,0,0,.55);
+    --shadow-2:0 24px 70px rgba(0,0,0,.9);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    background-image:
+      radial-gradient(circle at 15% -5%, rgba(255,255,255,.03), transparent 45%),
+      radial-gradient(circle at 95% 105%, rgba(255,255,255,.02), transparent 45%);
+    color:var(--text);
+    font-family:'Segoe UI',-apple-system,Roboto,Arial,sans-serif;
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  a{color:var(--bright);text-decoration:none}
+  button{font-family:inherit}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:var(--bg-2)}
+  ::-webkit-scrollbar-thumb{background:#2c3136;border-radius:5px}
+  ::-webkit-scrollbar-thumb:hover{background:#3a4046}
+  .layout{display:flex;min-height:100vh}
+  .sidebar{
+    width:240px;background:var(--sidebar);
+    border-right:1px solid var(--line);
+    padding:22px 0;position:sticky;top:0;height:100vh;flex-shrink:0;
+    display:flex;flex-direction:column;
+  }
+  .sidebar-brand{
+    padding:0 22px 22px;border-bottom:1px solid var(--line);margin-bottom:14px;
+    display:flex;align-items:center;gap:12px;
+  }
+  .sidebar-brand .logo{
+    width:40px;height:40px;border-radius:11px;flex-shrink:0;
+    background:linear-gradient(135deg,#2a2e33,#5c626a);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:19px;color:#f2f4f6;
+    border:1px solid #3a4046;
+  }
+  .sidebar-brand .name{font-size:14.5px;font-weight:700;line-height:1.2;color:var(--bright)}
+  .sidebar-brand .name span{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:4px;letter-spacing:.4px}
+  .nav-item{
+    display:flex;align-items:center;gap:12px;
+    padding:11px 22px;color:var(--muted);cursor:pointer;font-size:13.5px;
+    border-left:3px solid transparent;transition:.18s;user-select:none;
+  }
+  .nav-item:hover{color:var(--text);background:#12141a}
+  .nav-item.active{
+    color:var(--bright);
+    background:linear-gradient(90deg, rgba(200,210,220,.09), transparent 90%);
+    border-left-color:#c4cad2;
+  }
+  .nav-item .icon{font-size:16px;width:22px;text-align:center;flex-shrink:0;opacity:.85}
+  .nav-item .nav-badge{
+    margin-left:auto;background:#2a2e33;color:#c4cad2;
+    font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;
+    min-width:22px;text-align:center;border:1px solid #3a4046;
+  }
+  .sidebar-footer{margin-top:auto;padding:16px 22px;border-top:1px solid var(--line)}
+  .sidebar-stats{font-size:11px;color:var(--muted-2);line-height:1.8}
+  .sidebar-stats b{color:var(--muted)}
+  .sidebar-stats .stat-row{display:flex;justify-content:space-between}
+  .sidebar-stats .stat-row b.hi{color:var(--bright)}
+
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{
+    background:var(--bg-2);border-bottom:1px solid var(--line);
+    padding:16px 30px;display:flex;align-items:center;gap:16px;
+    position:sticky;top:0;z-index:50;flex-wrap:wrap;
+  }
+  .topbar h2{font-size:17px;font-weight:600;letter-spacing:.2px;color:var(--bright)}
+  .topbar .sub{color:var(--muted);font-size:12px;margin-top:3px}
+  .topbar .right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+  .user-badge{
+    display:flex;align-items:center;gap:10px;
+    background:var(--panel);border:1px solid var(--line-2);border-radius:9px;
+    padding:6px 12px;
+  }
+  .user-badge .user-name{font-size:13px;color:var(--bright);font-weight:600}
+  .user-badge .rank-badge{font-size:10px;padding:2px 8px}
+
+  .role-badge{font-size:10px;padding:3px 9px;border-radius:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;border:1px solid}
+  .role-badge.edit{background:#1d2024;color:#d8dde3;border-color:#3a4046}
+  .role-badge.view{background:#141618;color:var(--muted);border-color:var(--line-2)}
+  .content{padding:28px 30px 60px;max-width:1560px;width:100%;margin:0 auto}
+
+  .view{display:none}
+  .view.active{display:block;animation: viewIn .28s cubic-bezier(.2,.8,.3,1)}
+  @keyframes viewIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:26px}
+  .card{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line);border-radius:12px;padding:18px 20px;
+    position:relative;overflow:hidden;
+  }
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#2e3338,transparent)}
+  .card.red::before{background:linear-gradient(90deg,transparent,#8a929b,transparent)}
+  .card.gold::before{background:linear-gradient(90deg,transparent,#b8bec6,transparent)}
+  .card.green::before{background:linear-gradient(90deg,transparent,#c4cad2,transparent)}
+  .card .label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;font-weight:600}
+  .card .value{font-size:26px;font-weight:700;letter-spacing:.3px;font-variant-numeric:tabular-nums;color:var(--bright)}
+  .card .value.red{color:#c4cad2}
+  .card .value.gold{color:#b8bec6}
+  .card .value.green{color:#d8dde3}
+
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+  .toolbar input,.toolbar select{
+    background:var(--panel-2);border:1px solid var(--line-2);color:var(--text);
+    padding:9px 13px;border-radius:8px;font-size:13px;font-family:inherit;
+  }
+  .toolbar input:focus,.toolbar select:focus{outline:none;border-color:#5c626a}
+  .toolbar input{flex:1;min-width:200px}
+
+  .btn{
+    background:linear-gradient(180deg,#33383e,#1e2124);color:#f2f4f6;
+    border:1px solid #42484f;padding:9px 16px;border-radius:8px;
+    cursor:pointer;font-size:13px;font-weight:600;
+    transition:.15s;font-family:inherit;white-space:nowrap;
+    display:inline-flex;align-items:center;gap:7px;
+  }
+  .btn:hover{background:linear-gradient(180deg,#42484f,#2a2e33);border-color:#565c64;box-shadow:0 0 14px rgba(200,210,220,.15)}
+  .btn.ghost{background:transparent;border:1px solid var(--line-2);color:var(--text)}
+  .btn.ghost:hover{background:#15171a;border-color:#4a5058;box-shadow:none}
+  .btn.small{padding:5px 11px;font-size:12px;border-radius:6px}
+  .btn.danger{background:linear-gradient(180deg,#2a1e22,#181114);border-color:#3d2a2f;color:#c9c4c6}
+  .btn.danger:hover{background:linear-gradient(180deg,#3a2a2f,#241a1e);border-color:#5a3d42;box-shadow:none}
+  .btn.icon{padding:6px 8px;min-width:34px;justify-content:center}
+
+  .table-wrap{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:auto;box-shadow:var(--shadow-1)}
+  table{width:100%;border-collapse:collapse;min-width:900px}
+  thead{background:#08090b;position:sticky;top:0;z-index:5}
+  th{
+    text-align:left;padding:13px 16px;font-size:11px;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.7px;cursor:pointer;user-select:none;
+    border-bottom:1px solid var(--line-2);white-space:nowrap;font-weight:600;
+  }
+  th:hover{color:var(--bright)}
+  th .arrow{color:#c4cad2;margin-left:4px}
+  th.no-sort{cursor:default}
+  th.no-sort:hover{color:var(--muted)}
+  td{padding:11px 16px;border-bottom:1px solid var(--line);font-size:13px;font-variant-numeric:tabular-nums;vertical-align:middle}
+  tbody tr:hover{background:rgba(255,255,255,.025)}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,td.score-cell,td.kd-cell{font-family:'Consolas','Monaco',monospace;letter-spacing:.3px}
+  td.score-cell{color:#c4cad2;font-weight:600}
+  td.kd-cell{color:#d8dde3;font-weight:700}
+  td.editable{cursor:pointer;position:relative}
+  td.editable:hover{background:rgba(255,255,255,.05)}
+  td.editable:hover::after{content:'✎';position:absolute;right:6px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:10px;opacity:.75}
+  td input.inline-edit{
+    width:100%;background:var(--panel-2);border:1px solid #565c64;color:var(--text);
+    padding:4px 6px;border-radius:4px;font-size:13px;text-align:right;
+    font-family:'Consolas','Monaco',monospace;
+  }
+  td input.inline-edit:focus{outline:none;box-shadow:0 0 0 2px rgba(200,210,220,.25)}
+
+  .nick-cell{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .nick-cell b{font-weight:600;font-size:13.5px;color:var(--bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nick-cell .squad-tag{
+    display:inline-block;font-size:10px;color:#a8b0ba;font-weight:600;
+    background:#1a1d20;border:1px solid #2a2e33;padding:1px 7px;border-radius:8px;width:fit-content;
+  }
+  .rank-badge{
+    display:inline-block;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:700;
+    letter-spacing:.4px;white-space:nowrap;background:#1a1d20;color:#848a92;border:1px solid #2a2e33;
+  }
+  .rank-badge.rank-Leader{background:linear-gradient(180deg,#2e3338,#1a1d20);color:#f2f4f6;border-color:#5c626a}
+  .rank-badge.rank-Colonel{background:linear-gradient(180deg,#282c31,#16191c);color:#d8dde3;border-color:#4a5058}
+  .rank-badge.rank-Officer{background:linear-gradient(180deg,#22262a,#121416);color:#b8bec6;border-color:#3a4046}
+  .rank-badge.rank-Fighter{background:linear-gradient(180deg,#1a1d20,#0f1113);color:#9aa1a9;border-color:#2a2e33}
+  .rank-badge.rank-Reserve{background:#141618;color:#6a7078;border-color:#20242a}
+
+  .att-cell{display:flex;flex-direction:column;gap:5px;min-width:130px}
+  .att-bar{width:100%;height:6px;border-radius:3px;background:#0f1113;overflow:hidden;border:1px solid #1e2124}
+  .att-bar-fill{height:100%;background:linear-gradient(90deg,#4a5058,#d8dde3);transition:width .3s}
+  .att-bar-fill.low{background:linear-gradient(90deg,#2a2e33,#5c626a)}
+  .att-bar-fill.mid{background:linear-gradient(90deg,#3a4046,#8a929b)}
+  .att-bar-fill.high{background:linear-gradient(90deg,#5c626a,#e6e8ea)}
+  .att-text{font-size:11px;color:var(--muted);font-family:'Consolas','Monaco',monospace;display:flex;justify-content:space-between;gap:8px}
+  .att-pct{font-weight:700;color:var(--bright)}
+  .att-badge{
+    display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;
+    letter-spacing:.4px;padding:2px 8px;border-radius:10px;text-transform:uppercase;
+    width:fit-content;white-space:nowrap;border:1px solid;
+  }
+  .att-high{background:#2c3138;color:#f2f4f6;border-color:#6b727a}
+  .att-mid{background:#22262a;color:#d8dde3;border-color:#4a5058}
+  .att-low{background:#1a1d20;color:#a8b0ba;border-color:#33383e}
+  .att-zero{background:#121416;color:#7a828b;border-color:#252a2f}
+  .att-none{background:#0e1012;color:#4a5058;border-color:#1e2124;font-style:italic}
+
+  .att-btn-group{display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap}
+  .att-status-btn{
+    background:transparent;border:1px solid var(--line-2);color:var(--muted);
+    padding:5px 12px;border-radius:6px;cursor:pointer;font-size:11.5px;
+    font-family:inherit;white-space:nowrap;transition:.15s;font-weight:600;
+  }
+  .att-status-btn:hover{color:var(--bright);border-color:#5c626a;background:#1a1d20}
+  .att-status-btn.active-att{background:#16281a;color:#8fd88f;border-color:#3a5a3a;box-shadow:0 0 10px rgba(143,216,143,.15)}
+  .att-status-btn.active-exc{background:#2a2310;color:#ffd93d;border-color:#5a4a1a;box-shadow:0 0 10px rgba(255,217,61,.15)}
+  .att-status-btn.active-no{background:#28161a;color:#d88f8f;border-color:#5a3a3a;box-shadow:0 0 10px rgba(216,143,143,.15)}
+
+  .row-actions{display:flex;gap:5px;justify-content:flex-end}
+  .row-actions button{
+    background:transparent;border:1px solid var(--line-2);color:var(--muted);
+    padding:4px 8px;border-radius:5px;cursor:pointer;font-size:12px;
+    display:inline-flex;align-items:center;
+  }
+  .row-actions button:hover{color:var(--bright);border-color:#5c626a;background:#1a1d20}
+  .row-actions button.mark:hover{color:#f2f4f6;border-color:#6b727a;background:#22262a}
+  .row-actions button.del:hover{color:#c9c4c6;border-color:#5a3d42;background:#1e1418}
+
+  tr.worst-row{background:linear-gradient(90deg, rgba(255,255,255,.04), rgba(255,255,255,.01));box-shadow:inset 4px 0 0 0 #d8dde3}
+  tr.worst-row:hover{background:linear-gradient(90deg, rgba(255,255,255,.07), rgba(255,255,255,.02))}
+  tr.worst-row td{color:#9aa1a9}
+  tr.worst-row .nick-cell b{color:#e6e8ea}
+  tr.worst-row .score-cell{color:#a8b0ba}
+  .worst-badge{
+    display:inline-block;font-size:10px;font-weight:700;letter-spacing:.5px;
+    text-transform:uppercase;padding:2px 8px;border-radius:8px;
+    background:#22262a;color:#f2f4f6;border:1px solid #5c626a;margin-left:6px;
+  }
+
+  .modal-bg{
+    position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    opacity:0;visibility:hidden;pointer-events:none;
+    transition: opacity .24s ease, visibility 0s linear .24s;
+  }
+  .modal-bg.active{
+    opacity:1;visibility:visible;pointer-events:auto;
+    transition: opacity .24s ease, visibility 0s linear 0s;
+  }
+  .modal{
+    background:var(--panel);border:1px solid var(--line-2);border-radius:16px;
+    width:100%;max-width:560px;max-height:90vh;overflow:auto;
+    box-shadow:var(--shadow-2);
+    transform:translateY(20px) scale(.96);opacity:0;
+    transition: transform .32s cubic-bezier(.2,.85,.3,1.1), opacity .22s ease;
+  }
+  .modal-bg.active .modal{transform:translateY(0) scale(1);opacity:1}
+  .modal h2{
+    padding:20px 26px;border-bottom:1px solid var(--line);
+    font-size:16px;font-weight:600;color:var(--bright);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .modal h2 .close-x{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px 8px;border-radius:6px}
+  .modal h2 .close-x:hover{color:var(--bright);background:#1a1d20}
+  .modal .body{padding:24px 26px}
+  .modal .footer{padding:14px 26px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end}
+  .form-row{margin-bottom:14px}
+  .form-row label{display:block;color:var(--muted);font-size:11px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+  .form-row input,.form-row select,.form-row textarea{
+    width:100%;background:var(--panel-2);border:1px solid var(--line-2);color:var(--text);
+    padding:10px 13px;border-radius:8px;font-size:13px;font-family:inherit;
+  }
+  .form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:#5c626a;box-shadow:0 0 0 3px rgba(200,210,220,.15)}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+  .profile-head{
+    display:flex;gap:22px;align-items:center;background:var(--panel);
+    border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:20px;
+    position:relative;overflow:hidden;
+  }
+  .profile-head::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,#b8bec6,transparent 60%)}
+  .avatar{
+    width:84px;height:84px;border-radius:14px;
+    background:linear-gradient(135deg,#2a2e33,#0f1113);
+    display:flex;align-items:center;justify-content:center;
+    font-size:34px;font-weight:800;flex-shrink:0;
+    border:1px solid #3a4046;color:#f2f4f6;
+    text-shadow:0 2px 6px rgba(0,0,0,.6);
+  }
+  .profile-head .info h2{font-size:22px;margin-bottom:8px;color:var(--bright);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .profile-head .info .meta{color:var(--muted);font-size:13px;display:flex;gap:18px;flex-wrap:wrap}
+  .profile-head .info .meta b{color:#d8dde3}
+  .section-title{font-size:14px;margin:26px 0 14px;padding-left:14px;border-left:2px solid #5c626a;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600}
+
+  .loadout-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+  .loadout-box{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+  }
+  .loadout-box .lb-label{
+    color:var(--muted);font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.7px;font-weight:700;margin-bottom:8px;
+  }
+  .loadout-box .lb-value{color:var(--bright);font-size:14px;font-weight:600}
+  .loadout-box .lb-value.empty{color:var(--muted-2);font-weight:400;font-style:italic}
+
+  .games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+  .game-card{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line);border-radius:14px;padding:20px;
+    position:relative;transition:.18s;
+  }
+  .game-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#8a929b,transparent 70%)}
+  .game-card:hover{border-color:#3a4046;transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.55)}
+  .game-card .t-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+  .game-card h3{font-size:17px;font-weight:700;color:var(--bright);margin:0}
+  .game-card .t-date{font-family:'Consolas','Monaco',monospace;font-size:12px;color:#d8dde3;font-weight:600}
+  .game-card .t-dow{display:inline-block;background:#22262a;color:#f2f4f6;border:1px solid #4a5058;padding:2px 9px;border-radius:10px;font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+  .game-card .t-note{font-size:12px;color:var(--muted-2);margin:8px 0;line-height:1.5;font-style:italic;min-height:18px}
+  .game-card .t-members{display:flex;flex-wrap:wrap;gap:4px;margin:12px 0;max-height:100px;overflow-y:auto}
+  .game-card .t-chip{background:var(--panel-2);border:1px solid var(--line-2);color:var(--text);padding:2px 8px;border-radius:12px;font-size:11px}
+  .game-card .t-chip.stat-done{border-color:#5c626a;color:#f2f4f6}
+  .game-card .t-actions{display:flex;gap:6px;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);flex-wrap:wrap}
+  .game-card .t-count{display:inline-block;background:#1a1d20;color:#c4cad2;border:1px solid #2a2e33;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+  .t-btn-group{display:flex;gap:6px;flex-wrap:wrap}
+
+  .game-meta-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+  .gm-badge{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:10.5px;font-weight:700;letter-spacing:.4px;
+    padding:3px 10px;border-radius:10px;text-transform:uppercase;
+    border:1px solid;white-space:nowrap;
+  }
+  .gm-stage{background:#1a1d20;color:#c4cad2;border-color:#3a4046}
+  .gm-map{background:#1a1d20;color:#a8b0ba;border-color:#2a2e33}
+  .gm-win{background:#16281a;color:#8fd88f;border-color:#3a5a3a}
+  .gm-loss{background:#28161a;color:#d88f8f;border-color:#5a3a3a}
+  .gm-excused{background:#2a2310;color:#ffd93d;border-color:#5a4a1a}
+  .gm-none{background:#0e1012;color:#4a5058;border-color:#1e2124;font-style:italic}
+
+  .map-wr-table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:20px;box-shadow:var(--shadow-1)}
+  .map-wr-table th,.map-wr-table td{padding:11px 16px;font-size:13px;text-align:left;border-bottom:1px solid var(--line)}
+  .map-wr-table th{background:#08090b;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;border-bottom:1px solid var(--line-2)}
+  .map-wr-table tr:last-child td{border-bottom:none}
+  .map-wr-table .map-name{color:var(--bright);font-weight:600}
+  .map-wr-table .wr-value{font-family:'Consolas','Monaco',monospace;font-weight:700}
+  .map-wr-table .wr-high{color:#8fd88f}
+  .map-wr-table .wr-mid{color:#d8dde3}
+  .map-wr-table .wr-low{color:#d88f8f}
+  .map-wr-table .wr-empty{color:var(--muted-2);font-style:italic;font-weight:400}
+  .map-wr-bar{height:6px;border-radius:3px;background:#0f1113;overflow:hidden;border:1px solid #1e2124;margin-top:4px}
+  .map-wr-bar > div{height:100%;background:linear-gradient(90deg,#5c626a,#e6e8ea);transition:width .3s}
+
+  .tourn-picker{max-height:280px;overflow-y:auto;background:var(--panel-2);border:1px solid var(--line-2);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:4px}
+  .tourn-picker-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;cursor:pointer}
+  .tourn-picker-row:hover{background:rgba(255,255,255,.04)}
+  .tourn-picker-row input[type="checkbox"]{width:16px;height:16px;cursor:pointer;accent-color:#8a929b}
+  .tourn-picker-row .nick{flex:1;font-size:13px;color:var(--bright)}
+  .tourn-picker-row .rank-tag{font-size:10px;color:var(--muted);text-transform:uppercase}
+  .tourn-picker-actions{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+
+  .game-stats-table{width:100%;border-collapse:collapse}
+  .game-stats-table th,.game-stats-table td{padding:8px 10px;border-bottom:1px solid var(--line);font-size:12.5px;text-align:left}
+  .game-stats-table th{background:#08090b;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;position:sticky;top:0}
+  .game-stats-table input[type="number"]{
+    width:70px;background:var(--panel-2);border:1px solid var(--line-2);
+    color:var(--text);padding:5px 8px;border-radius:6px;font-family:'Consolas','Monaco',monospace;font-size:12px;
+  }
+  .game-stats-table input[type="number"]:focus{outline:none;border-color:#5c626a;box-shadow:0 0 0 2px rgba(200,210,220,.15)}
+  .game-stats-table .g-nick{color:var(--bright);font-weight:600;font-size:13px}
+
+  .parse-result{
+    margin-top:10px;padding:10px 14px;border:1px solid var(--line-2);
+    border-radius:8px;background:var(--panel-2);font-size:12px;
+    max-height:200px;overflow-y:auto;line-height:1.7;
+  }
+  .parse-result .pr-ok{color:#d8dde3}
+  .parse-result .pr-warn{color:#ffb84d}
+  .parse-result .pr-err{color:#c9c4c6}
+  .parse-result .pr-fuzzy{color:#ffb84d;font-size:10.5px;font-style:italic}
+  .parse-result .pr-arrow{color:var(--muted);margin:0 4px}
+  .parse-result .pr-zero{color:#7a828b;font-size:11.5px}
+
+  .empty{color:var(--muted);text-align:center;padding:50px 20px;font-style:italic;font-size:13px}
+
+  .config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+  .config-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .config-box h3{font-size:13px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:14px;font-weight:600}
+  .config-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;min-height:36px}
+  .config-item{
+    display:flex;align-items:center;gap:8px;background:var(--panel-2);
+    border:1px solid var(--line);border-radius:6px;padding:7px 10px;
+    animation: itemIn .22s cubic-bezier(.2,.8,.3,1);
+  }
+  @keyframes itemIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+  .config-item.removing{animation: itemOut .22s ease forwards}
+  @keyframes itemOut{to{opacity:0;transform:translateX(6px);height:0;padding:0;margin:0;border:0}}
+  .config-item .name{flex:1;font-size:13px}
+  .config-item .del{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px}
+  .config-item .del:hover{color:#f2f4f6;background:#2a2e33}
+  .config-empty{color:var(--muted-2);font-size:12px;padding:6px;font-style:italic}
+  .config-add{display:flex;gap:6px}
+  .config-add input{flex:1;background:var(--panel-2);border:1px solid var(--line-2);color:var(--text);padding:7px 11px;border-radius:6px;font-size:12px;font-family:inherit}
+  .config-add input:focus{outline:none;border-color:#5c626a;box-shadow:0 0 0 3px rgba(200,210,220,.15)}
+  .config-add button{background:linear-gradient(180deg,#33383e,#1e2124);border:1px solid #42484f;color:#f2f4f6;padding:7px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600}
+  .config-add button:hover{background:linear-gradient(180deg,#42484f,#2a2e33);border-color:#565c64}
+
+  .perm-table{width:100%;border-collapse:collapse;background:var(--panel-2);border-radius:10px;overflow:hidden}
+  .perm-table th,.perm-table td{padding:11px 12px;font-size:12px;border-bottom:1px solid var(--line);text-align:center}
+  .perm-table th{background:#08090b;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;border-bottom:1px solid var(--line-2);white-space:nowrap}
+  .perm-table th:first-child,.perm-table td:first-child{text-align:left;font-weight:600}
+  .perm-table td:first-child{color:var(--bright);font-size:13px}
+  .perm-table tr:last-child td{border-bottom:none}
+  .perm-table input[type="checkbox"]{width:17px;height:17px;cursor:pointer;accent-color:#8a929b}
+  .perm-table .perm-desc{display:block;font-size:10px;color:var(--muted-2);font-weight:400;letter-spacing:0;text-transform:none;margin-top:2px}
+  .perm-table-wrap{overflow-x:auto;border-radius:10px}
+
+  .squads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+  .squad-card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:14px;padding:20px;position:relative}
+  .squad-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#8a929b,transparent 70%)}
+  .squad-card:hover{border-color:#3a4046;transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.55)}
+  .squad-card h3{font-size:18px;font-weight:700;margin-bottom:6px;color:var(--bright);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .squad-card .leader{font-size:12px;color:var(--muted);margin-bottom:4px}
+  .squad-card .leader b{color:var(--yellow)}
+  .squad-card .desc{font-size:12px;color:var(--muted-2);margin:10px 0;line-height:1.5;min-height:18px}
+
+  .squad-card .members{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:4px;
+    margin:12px 0;
+    max-height:240px;
+    overflow-y:auto;
+    padding-right:4px;
+    scrollbar-width:thin;
+  }
+  .squad-card .members::-webkit-scrollbar{width:6px}
+  .squad-card .member-chip{
+    background:var(--panel-2);border:1px solid var(--line-2);color:var(--text);
+    padding:5px 10px;border-radius:8px;font-size:11.5px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .squad-card .member-chip.leader-chip{
+    background:linear-gradient(180deg,#3a3000,#241e00);
+    color:var(--yellow);border-color:#8a7a1e;font-weight:700;
+    box-shadow:0 0 8px rgba(255,217,61,.25);
+  }
+  .squad-card .actions{display:flex;gap:6px;justify-content:flex-end;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .squad-card .count{display:inline-block;background:#1a1d20;color:#c4cad2;border:1px solid #2a2e33;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+
+  .squad-members-picker{max-height:280px;overflow-y:auto;background:var(--panel-2);border:1px solid var(--line-2);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:4px}
+  .squad-member-row{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;cursor:pointer}
+  .squad-member-row:hover{background:rgba(255,255,255,.04)}
+  .squad-member-row input[type="checkbox"]{width:16px;height:16px;cursor:pointer;accent-color:#8a929b}
+  .squad-member-row .nick{flex:1;font-size:13px}
+  .squad-member-row .rank-tag{font-size:10px;color:var(--muted);text-transform:uppercase}
+
+  .login-intro{
+    text-align:center;padding:8px 0 16px;
+  }
+  .login-intro .li-icon{font-size:44px;margin-bottom:10px;display:block}
+  .login-intro .li-title{font-size:17px;font-weight:700;color:var(--bright);margin-bottom:6px}
+  .login-intro .li-sub{font-size:12.5px;color:var(--muted);line-height:1.5}
+
+  @media(max-width:900px){
+    .layout{flex-direction:column}
+    .sidebar{width:100%;height:auto;position:relative;padding:14px 0}
+    .sidebar-brand{padding:0 18px 14px}
+    .nav-item{padding:10px 18px}
+    .sidebar-footer{padding:12px 18px}
+    .content{padding:18px}
+    .topbar{padding:14px 18px}
+    .form-grid{grid-template-columns:1fr}
+    .profile-head{flex-direction:column;text-align:center}
+  }
+  @media(max-width:600px){
+    .topbar h2{font-size:15px}
+    .cards{grid-template-columns:1fr 1fr}
+    .card .value{font-size:22px}
+  }
+</style>
+</head>
+<body>
+
+<div id="app" class="active">
+  <div class="layout">
+
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo">S</div>
+        <div class="name">
+          Святая Свага
+          <span>Stalzone · Hub</span>
+        </div>
+      </div>
+
+      <div id="navContainer">
+        <div class="nav-item active" data-view="dashboard" tabindex="0"><span class="icon">📊</span> Дашборд</div>
+        <div class="nav-item" data-view="attendance" tabindex="0"><span class="icon">📅</span> Посещаемость</div>
+        <div class="nav-item" data-view="results" tabindex="0"><span class="icon">📋</span> Результаты</div>
+        <div class="nav-item" data-view="games" tabindex="0"><span class="icon">🎮</span> Игры <span class="nav-badge" id="navGamesBadge" style="display:none">0</span></div>
+        <div class="nav-item" data-view="roster" tabindex="0"><span class="icon">👥</span> Состав</div>
+        <div class="nav-item" data-view="squads" tabindex="0"><span class="icon">🚩</span> Отряды</div>
+        <div class="nav-item" data-view="equipment" tabindex="0"><span class="icon">🛡️</span> Снаряжение</div>
+        <div class="nav-item" data-view="settings" tabindex="0"><span class="icon">⚙️</span> Настройки</div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-stats" id="sidebarStats"></div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <h2 id="topTitle">Дашборд</h2>
+          <div class="sub" id="topSub">Обзор статистики клана</div>
+        </div>
+        <div class="right">
+          <div id="userInfo"></div>
+          <button class="btn ghost small" onclick="logout()" title="Сменить пользователя">🚪 Выйти</button>
+          <button class="btn ghost small" onclick="exportCSV()">📊 CSV</button>
+          <button class="btn ghost small" onclick="exportData()">💾 JSON</button>
+          <button class="btn ghost small" data-perm="data" onclick="document.getElementById('importFile').click()">📥 Импорт</button>
+          <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- ДАШБОРД -->
+        <section class="view active" id="view-dashboard">
+          <div class="cards" id="summaryCards"></div>
+
+          <div class="toolbar">
+            <input type="text" id="searchInput" placeholder="🔍 Поиск по нику, снаряжению, заметке..." oninput="renderDashboard()">
+            <select id="rankFilter" onchange="renderDashboard()"></select>
+            <select id="squadFilter" onchange="renderDashboard()"></select>
+            <select id="attendanceFilter" onchange="renderDashboard()">
+              <option value="">Все уровни посещаемости</option>
+              <option value="high">Отличная (≥ 80%)</option>
+              <option value="mid">Средняя (50–79%)</option>
+              <option value="low">Низкая (1–49%)</option>
+              <option value="zero">Ни одной игры</option>
+              <option value="none">Нет игр в учёте</option>
+            </select>
+            <button class="btn" data-perm="tournaments" onclick="openGameModal()">+ Новая игра</button>
+            <button class="btn" data-perm="players" onclick="openPlayerModal()">+ Добавить игрока</button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th onclick="sortBy('nickname')">Ник <span class="arrow" id="arr-nickname"></span></th>
+                  <th onclick="sortBy('rank')">Ранг <span class="arrow" id="arr-rank"></span></th>
+                  <th onclick="sortBy('kills')">У <span class="arrow" id="arr-kills"></span></th>
+                  <th onclick="sortBy('deaths')">С <span class="arrow" id="arr-deaths"></span></th>
+                  <th onclick="sortBy('assists')">П <span class="arrow" id="arr-assists"></span></th>
+                  <th onclick="sortBy('score')">Очки <span class="arrow" id="arr-score"></span></th>
+                  <th onclick="sortBy('kd')">К/Д <span class="arrow" id="arr-kd"></span></th>
+                  <th onclick="sortBy('attendance')">Посещаемость игр <span class="arrow" id="arr-attendance"></span></th>
+                  <th class="no-sort" style="text-align:right">Действия</th>
+                </tr>
+              </thead>
+              <tbody id="dashboardBody"></tbody>
+            </table>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:10px">
+            <div style="color:var(--muted);font-size:12px">
+              💡 Кликните по числу, чтобы изменить его.
+            </div>
+            <button class="btn ghost small" data-perm="players" onclick="quickAddRow()">+ Строка</button>
+          </div>
+        </section>
+
+        <!-- ПОСЕЩАЕМОСТЬ -->
+        <section class="view" id="view-attendance">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+            <h2 class="section-title" style="margin:0">Посещаемость игр</h2>
+          </div>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:16px">
+            Выберите игру и отметьте статус каждого игрока: <b style="color:#8fd88f">✓ Был</b>,
+            <b style="color:#ffd93d">🕐 Отгул</b> (уважительная причина, не идёт в минус),
+            <b style="color:#d88f8f">✕ Не был</b>. Изменения сохраняются автоматически.
+          </p>
+
+          <div class="toolbar">
+            <select id="attGameSelect" onchange="renderAttendanceView()" style="flex:1;max-width:520px"></select>
+            <button class="btn ghost small" data-perm="tournaments" onclick="markAllAttended()">✓ Отметить всех</button>
+            <button class="btn ghost small" data-perm="tournaments" onclick="clearAllAttended()">✕ Очистить</button>
+          </div>
+
+          <div id="attendanceContainer"></div>
+        </section>
+
+        <!-- РЕЗУЛЬТАТЫ -->
+        <section class="view" id="view-results">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+            <h2 class="section-title" style="margin:0">Результаты участников</h2>
+            <button class="btn ghost small" onclick="exportResultsCSV()">📊 Экспорт CSV</button>
+          </div>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:16px">
+            Отсортировано по очкам (лучшие сверху). <span style="color:var(--bright);font-weight:600">Светлая полоса</span> слева отмечает 5 худших — антирейтинг.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th class="no-sort">#</th>
+                  <th class="no-sort">Ник</th>
+                  <th class="no-sort">Отряд</th>
+                  <th class="no-sort">У</th>
+                  <th class="no-sort">С</th>
+                  <th class="no-sort">П</th>
+                  <th class="no-sort">К/Д</th>
+                  <th class="no-sort">Очки</th>
+                </tr>
+              </thead>
+              <tbody id="resultsBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ИГРЫ -->
+        <section class="view" id="view-games">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+            <h2 class="section-title" style="margin:0">Клановые войны / игры</h2>
+            <button class="btn" data-perm="tournaments" onclick="openGameModal()">+ Новая игра</button>
+          </div>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:16px">
+            Игры проходят с четверга по субботу (ЧТ–СБ). Указывайте этап, карту и результат — статистика по картам агрегируется автоматически.
+          </p>
+          <div class="cards" id="gamesSummaryCards"></div>
+          <div id="mapWinrateContainer"></div>
+          <div id="gamesContainer"></div>
+        </section>
+
+        <!-- СОСТАВ -->
+        <section class="view" id="view-roster">
+          <h2 class="section-title">Полный состав клана</h2>
+          <div id="rosterList"></div>
+        </section>
+
+        <!-- ОТРЯДЫ -->
+        <section class="view" id="view-squads">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+            <h2 class="section-title" style="margin:0">Отряды клана</h2>
+            <button class="btn" data-perm="squads" onclick="openSquadModal()">+ Создать отряд</button>
+          </div>
+          <div id="squadsContainer"></div>
+        </section>
+
+        <!-- СНАРЯЖЕНИЕ -->
+        <section class="view" id="view-equipment">
+          <h2 class="section-title">Снаряжение игроков</h2>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:16px">
+            Текущее снаряжение всех бойцов: сборка, броня, оружие, снайперка.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th class="no-sort">Ник</th>
+                  <th class="no-sort">Звание</th>
+                  <th class="no-sort">Отряд</th>
+                  <th class="no-sort">Сборка</th>
+                  <th class="no-sort">Броня</th>
+                  <th class="no-sort">Оружие</th>
+                  <th class="no-sort">Снайперка</th>
+                  <th class="no-sort" style="text-align:right">Действия</th>
+                </tr>
+              </thead>
+              <tbody id="equipmentBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- НАСТРОЙКИ -->
+        <section class="view" id="view-settings">
+          <h2 class="section-title">Справочники</h2>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Настраивайте списки: звания, сборки, брони, оружие, снайперки, карты.</p>
+
+          <div class="config-grid" id="configGrid">
+            <div class="config-box">
+              <h3>🎖 Звания</h3>
+              <div class="config-list" data-config-list="ranks"></div>
+              <div class="config-add" data-perm-block="settings">
+                <input type="text" data-config-input="ranks" placeholder="Новое звание...">
+                <button type="button" data-config-add="ranks">+ Добавить</button>
+              </div>
+            </div>
+            <div class="config-box">
+              <h3>🧰 Сборки</h3>
+              <div class="config-list" data-config-list="builds"></div>
+              <div class="config-add" data-perm-block="settings">
+                <input type="text" data-config-input="builds" placeholder="Новая сборка...">
+                <button type="button" data-config-add="builds">+ Добавить</button>
+              </div>
+            </div>
+            <div class="config-box">
+              <h3>🛡 Брони</h3>
+              <div class="config-list" data-config-list="armors"></div>
+              <div class="config-add" data-perm-block="settings">
+                <input type="text" data-config-input="armors" placeholder="Новая броня...">
+                <button type="button" data-config-add="armors">+ Добавить</button>
+              </div>
+            </div>
+            <div class="config-box">
+              <h3>🔫 Оружие</h3>
+              <div class="config-list" data-config-list="weapons"></div>
+              <div class="config-add" data-perm-block="settings">
+                <input type="text" data-config-input="weapons" placeholder="Новое оружие...">
+                <button type="button" data-config-add="weapons">+ Добавить</button>
+              </div>
+            </div>
+            <div class="config-box">
+              <h3>🎯 Снайперки</h3>
+              <div class="config-list" data-config-list="snipers"></div>
+              <div class="config-add" data-perm-block="settings">
+                <input type="text" data-config-input="snipers" placeholder="Новая снайперка...">
+                <button type="button" data-config-add="snipers">+ Добавить</button>
+              </div>
+            </div>
+            <div class="config-box">
+              <h3>🗺 Карты</h3>
+              <div class="config-list" data-config-list="maps"></div>
+              <div class="config-add" data-perm-block="settings">
+                <input type="text" data-config-input="maps" placeholder="Новая карта...">
+                <button type="button" data-config-add="maps">+ Добавить</button>
+              </div>
+            </div>
+          </div>
+
+          <h2 class="section-title" style="margin-top:30px">🔐 Матрица прав</h2>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:16px">
+            Отметьте, какие действия доступны каждому званию.
+          </p>
+          <div class="perm-table-wrap">
+            <table class="perm-table" id="permMatrixTable">
+              <thead id="permMatrixHead"></thead>
+              <tbody id="permMatrixBody"></tbody>
+            </table>
+          </div>
+
+          <h2 class="section-title" style="margin-top:30px">Данные</h2>
+          <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+            <div class="card">
+              <div class="label">💾 Экспорт JSON</div>
+              <p style="color:var(--muted);margin:8px 0 14px;font-size:13px">Резервная копия всех данных.</p>
+              <button class="btn ghost" onclick="exportData()">Скачать</button>
+            </div>
+            <div class="card">
+              <div class="label">📊 Экспорт CSV</div>
+              <p style="color:var(--muted);margin:8px 0 14px;font-size:13px">Для Excel и Google Таблиц.</p>
+              <button class="btn ghost" onclick="exportCSV()">Скачать</button>
+            </div>
+            <div class="card" data-perm-block="data">
+              <div class="label">🎲 Демо-данные</div>
+              <p style="color:var(--muted);margin:8px 0 14px;font-size:13px">Заполнить примерами.</p>
+              <button class="btn ghost" onclick="loadDemo()">Загрузить</button>
+            </div>
+            <div class="card" data-perm-block="data">
+              <div class="label">🗑 Очистить</div>
+              <p style="color:var(--muted);margin:8px 0 14px;font-size:13px">Удалить всё безвозвратно.</p>
+              <button class="btn danger" onclick="clearAll()">Удалить</button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛКА ИГРОКА -->
+<div class="modal-bg" id="playerModal">
+  <div class="modal">
+    <h2><span id="playerModalTitle">Добавить игрока</span><button class="close-x" onclick="closeModal('playerModal')">✕</button></h2>
+    <div class="body">
+      <input type="hidden" id="p_id">
+      <div class="form-row">
+        <label>Никнейм *</label>
+        <input type="text" id="p_nickname" placeholder="Например: PrimeBlin_">
+      </div>
+      <div class="form-row">
+        <label>Звание</label>
+        <select id="p_rank"></select>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Сборка</label>
+          <select id="p_build"></select>
+        </div>
+        <div class="form-row">
+          <label>Броня</label>
+          <select id="p_armor"></select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Оружие</label>
+          <select id="p_weapon"></select>
+        </div>
+        <div class="form-row">
+          <label>Снайперка</label>
+          <select id="p_sniper"></select>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn ghost" onclick="closeModal('playerModal')">Отмена</button>
+      <button class="btn" onclick="savePlayer()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛКА ОТРЯДА -->
+<div class="modal-bg" id="squadModal">
+  <div class="modal" style="max-width:640px">
+    <h2><span id="squadModalTitle">Новый отряд</span><button class="close-x" onclick="closeModal('squadModal')">✕</button></h2>
+    <div class="body">
+      <input type="hidden" id="sq_id">
+      <div class="form-row">
+        <label>Название отряда *</label>
+        <input type="text" id="sq_name" placeholder="Например: Альфа">
+      </div>
+      <div class="form-row">
+        <label>Лидер отряда</label>
+        <select id="sq_leader"></select>
+      </div>
+      <div class="form-row">
+        <label>Описание</label>
+        <textarea id="sq_desc" rows="2" placeholder="Краткое описание отряда..."></textarea>
+      </div>
+      <div class="form-row">
+        <label>Участники отряда</label>
+        <div class="squad-members-picker" id="squadMembersPicker"></div>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn ghost" onclick="closeModal('squadModal')">Отмена</button>
+      <button class="btn" onclick="saveSquad()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛКА ИГРЫ -->
+<div class="modal-bg" id="gameModal">
+  <div class="modal" style="max-width:720px">
+    <h2><span id="gameModalTitle">Новая игра</span><button class="close-x" onclick="closeModal('gameModal')">✕</button></h2>
+    <div class="body">
+      <input type="hidden" id="t_id">
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Дата (ЧТ / ПТ / СБ) *</label>
+          <input type="date" id="t_date">
+        </div>
+        <div class="form-row">
+          <label>Название / соперник</label>
+          <input type="text" id="t_name" placeholder="КВ против Absolute">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Этап</label>
+          <select id="t_stage">
+            <option value="">— Не указан —</option>
+            <option value="1">Этап 1</option>
+            <option value="2">Этап 2</option>
+            <option value="3">Этап 3</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Карта</label>
+          <select id="t_map"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Результат</label>
+        <select id="t_result">
+          <option value="">— Не указан —</option>
+          <option value="win">🏆 Победа</option>
+          <option value="loss">💀 Поражение</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Заметка</label>
+        <textarea id="t_note" rows="2" placeholder="Итог, счёт, комментарий..."></textarea>
+      </div>
+      <div class="form-row">
+        <label>Кто присутствовал</label>
+        <div class="tourn-picker-actions">
+          <button type="button" class="btn ghost small" onclick="toggleAllAttendees(true)">Отметить всех</button>
+          <button type="button" class="btn ghost small" onclick="toggleAllAttendees(false)">Снять всех</button>
+          <span id="t_attendee_count" style="color:var(--muted);font-size:12px;margin-left:auto;align-self:center"></span>
+        </div>
+        <div class="tourn-picker" id="tournamentPicker"></div>
+        <p style="color:var(--muted-2);font-size:11.5px;margin-top:8px">
+          Отгулы отмечаются во вкладке «📅 Посещаемость».
+        </p>
+      </div>
+
+      <div class="form-row" style="margin-top:16px">
+        <label>📋 Статистика (по никнеймам) — вставьте текстом</label>
+        <textarea id="t_parse_text" rows="5" placeholder="1 Серый_Циклоп 31 7 9 23518 11302 Боец&#10;2 PrimeBlin_ 6 12 5 6116 Лидер&#10;..."></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+          <button type="button" class="btn small" onclick="parseGameText()">🔍 Разобрать и заполнить</button>
+          <button type="button" class="btn ghost small" onclick="document.getElementById('t_parse_text').value=''; document.getElementById('t_parse_result').innerHTML='';">✕ Очистить</button>
+        </div>
+        <div class="parse-result" id="t_parse_result" style="display:none"></div>
+        <p style="color:var(--muted-2);font-size:11.5px;margin-top:8px;line-height:1.6">
+          Формат: <code>№ Ник У С П [Казна] Очки Ранг</code>.
+          Похожие никнеймы (регистр и символы <code>_ . -</code> не учитываются) будут найдены автоматически.
+          Игроки с нулевой статистикой не засчитываются как посетившие игру.
+        </p>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn ghost" onclick="closeModal('gameModal')">Отмена</button>
+      <button class="btn" onclick="saveGame()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛКА СТАТИСТИКИ ИГРЫ -->
+<div class="modal-bg" id="gameStatsModal">
+  <div class="modal" style="max-width:760px">
+    <h2><span id="gameStatsModalTitle">Статистика за игру</span><button class="close-x" onclick="closeModal('gameStatsModal')">✕</button></h2>
+    <div class="body">
+      <input type="hidden" id="gs_gameId">
+      <p id="gs_gameInfo" style="color:var(--muted);font-size:13px;margin-bottom:16px"></p>
+      <div style="max-height:55vh;overflow:auto;border:1px solid var(--line);border-radius:8px">
+        <table class="game-stats-table" id="gameStatsTable">
+          <thead>
+            <tr>
+              <th>Игрок</th>
+              <th>У</th>
+              <th>С</th>
+              <th>П</th>
+              <th>Очки</th>
+            </tr>
+          </thead>
+          <tbody id="gameStatsBody"></tbody>
+        </table>
+      </div>
+      <p style="color:var(--muted-2);font-size:11.5px;margin-top:10px">
+        Внесите статистику каждого участника за эту игру. Изменения автоматически пересчитаются в общих показателях игроков.
+      </p>
+    </div>
+    <div class="footer">
+      <button class="btn ghost" onclick="closeModal('gameStatsModal')">Отмена</button>
+      <button class="btn" onclick="saveGameStats()">Сохранить статистику</button>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛКА ПОДТВЕРЖДЕНИЯ -->
+<div class="modal-bg" id="confirmModal">
+  <div class="modal" style="max-width:440px">
+    <h2><span>Подтверждение</span></h2>
+    <div class="body">
+      <p id="confirmText" style="color:var(--text);font-size:14px;line-height:1.6"></p>
+    </div>
+    <div class="footer">
+      <button class="btn ghost" id="confirmNo">Отмена</button>
+      <button class="btn danger" id="confirmYes">Да, продолжить</button>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛКА ВХОДА -->
+<div class="modal-bg" id="loginModal">
+  <div class="modal" style="max-width:460px">
+    <h2><span>🔐 Вход в систему</span></h2>
+    <div class="body">
+      <div class="login-intro">
+        <span class="li-icon">🎖</span>
+        <div class="li-title">Клан-Менеджер «Святая Свага»</div>
+        <div class="li-sub">Выберите роль и введите пароль для входа.</div>
+      </div>
+
+      <div class="form-row">
+        <label>Ваша роль</label>
+        <select id="loginRole">
+          <option value="Лидер">Лидер</option>
+          <option value="Полковник">Полковник</option>
+          <option value="Офицер">Офицер</option>
+          <option value="Боец">Боец</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label>Пароль</label>
+        <input type="password" id="loginPassword" placeholder="Введите пароль" autocomplete="off">
+      </div>
+
+      <div id="loginError" style="display:none;color:#d88f8f;font-size:12.5px;margin-top:4px;padding:8px 12px;background:#28161a;border:1px solid #5a3a3a;border-radius:6px"></div>
+    </div>
+    <div class="footer">
+      <button class="btn" onclick="doLogin()">Войти</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   КОНФИГ
+   ===================================================================== */
+const DEFAULT_CONFIG = {
+  ranks:   ['Лидер','Полковник','Офицер','Боец','Запас'],
+  builds:  ['Стандарт','Штурм','Разведка','Танк','Саппорт'],
+  armors:  ['Броня «Скала»','Комбинезон «Заря»','Броня «Монолит»','Комбинезон «СЕВА»'],
+  weapons: ['АК-74М','АКС-74У','Абакан','Вал','ВСС «Винторез»'],
+  snipers: ['СВД','СВУ','Лобаев','Мосин','ВССМ'],
+  maps:    ['Бердовка (бок)','Бердовка (Центр)','Низина','Хвойник'],
+  rolePermissions: {
+    'Лидер':     { players:true,  squads:true,  equipment:true,  tournaments:true,  settings:true,  roles:true,  data:true  },
+    'Полковник': { players:true,  squads:true,  equipment:true,  tournaments:true,  settings:false, roles:false, data:false },
+    'Офицер':    { players:false, squads:false, equipment:true,  tournaments:true,  settings:false, roles:false, data:false },
+    'Боец':      { players:false, squads:false, equipment:false, tournaments:false, settings:false, roles:false, data:false },
+    'Запас':     { players:false, squads:false, equipment:false, tournaments:false, settings:false, roles:false, data:false }
+  }
+};
+const PERMISSION_KEYS = ['players','squads','equipment','tournaments','settings','roles','data'];
+const PERMISSION_LABELS = {
+  players:     { title:'Игроки',      desc:'состав' },
+  squads:      { title:'Отряды',      desc:'группы' },
+  equipment:   { title:'Снаряжение',  desc:'сборка и т.п.' },
+  tournaments: { title:'Игры',        desc:'посещаемость' },
+  settings:    { title:'Справочники', desc:'звания и списки' },
+  roles:       { title:'Роли',        desc:'права' },
+  data:        { title:'Данные',      desc:'импорт, очистка' }
+};
+const DOW_NAMES = ['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
+const TOURNAMENT_DOW = [4, 5, 6];
+
+const STORAGE_KEY = 'stalzone_clan_data_v11';
+const SORT_KEY    = 'stalzone_sort_v11';
+const VIEW_KEY    = 'stalzone_view_v11';
+const SESSION_KEY = 'stalzone_session_v11';
+
+/* Пароли для входа по ролям */
+const ROLE_PASSWORDS = {
+  'Лидер':     'Leader1010',
+  'Полковник': 'Burmalda',
+  'Офицер':    'UltraSvaga2020',
+  'Боец':      'Goodboy1234'
+};
+
+let state = {
+  players: [],
+  squads: [],
+  tournaments: [],
+  config: JSON.parse(JSON.stringify(DEFAULT_CONFIG))
+};
+let session = {
+  role: 'Лидер',
+  playerId: null,
+  playerName: '',
+  loggedIn: false
+};
+let sortKey = 'score', sortDir = 'desc';
+let currentProfileId = null;
+
+/* =====================================================================
+   УТИЛИТЫ
+   ===================================================================== */
+function uid(prefix){ return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2,7); }
+function escapeHtml(s){
+  return (s == null ? '' : s.toString()).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function cssSafe(s){
+  const map = {'Лидер':'Leader','Полковник':'Colonel','Офицер':'Officer','Боец':'Fighter','Запас':'Reserve'};
+  return map[s] || 'Reserve';
+}
+function RANKS(){ return Array.isArray(state.config.ranks) ? state.config.ranks : []; }
+function BUILDS(){ return Array.isArray(state.config.builds) ? state.config.builds : []; }
+function ARMORS(){ return Array.isArray(state.config.armors) ? state.config.armors : []; }
+function WEAPONS(){ return Array.isArray(state.config.weapons) ? state.config.weapons : []; }
+function SNIPERS(){ return Array.isArray(state.config.snipers) ? state.config.snipers : []; }
+function MAPS(){ return Array.isArray(state.config.maps) ? state.config.maps : []; }
+function SQUADS(){ return Array.isArray(state.squads) ? state.squads : []; }
+function GAMES(){ return Array.isArray(state.tournaments) ? state.tournaments : []; }
+
+function ROLE_PERMS(role){
+  const rp = state.config.rolePermissions || {};
+  const fresh = {};
+  if(rp[role]){
+    PERMISSION_KEYS.forEach(k=> fresh[k] = !!rp[role][k]);
+  } else {
+    PERMISSION_KEYS.forEach(k=> fresh[k] = false);
+  }
+  return fresh;
+}
+function can(action){ return !!ROLE_PERMS(session.role)[action]; }
+function anyEditRights(){
+  const rp = ROLE_PERMS(session.role);
+  return PERMISSION_KEYS.some(k => rp[k]);
+}
+
+/* =====================================================================
+   CONFIRM
+   ===================================================================== */
+function askConfirm(message){
+  return new Promise(resolve=>{
+    const modal = document.getElementById('confirmModal');
+    const text = document.getElementById('confirmText');
+    const yes = document.getElementById('confirmYes');
+    const no = document.getElementById('confirmNo');
+    text.textContent = message;
+    modal.classList.add('active');
+    const cleanup = ()=>{
+      modal.classList.remove('active');
+      yes.removeEventListener('click', onYes);
+      no.removeEventListener('click', onNo);
+      modal.removeEventListener('click', onBackdrop);
+    };
+    const onYes = ()=>{ cleanup(); resolve(true); };
+    const onNo = ()=>{ cleanup(); resolve(false); };
+    const onBackdrop = (e)=>{ if(e.target === modal){ cleanup(); resolve(false); } };
+    yes.addEventListener('click', onYes);
+    no.addEventListener('click', onNo);
+    modal.addEventListener('click', onBackdrop);
+  });
+}
+
+/* =====================================================================
+   ДАТЫ
+   ===================================================================== */
+function todayISO(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+function parseISO(iso){
+  if(!iso) return null;
+  const [y,m,d] = iso.split('-').map(Number);
+  if(!y || !m || !d) return null;
+  return new Date(y, m-1, d);
+}
+function formatDate(iso){
+  if(!iso) return '—';
+  const d = parseISO(iso);
+  if(!d) return iso;
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  return `${dd}.${mm}.${d.getFullYear()}`;
+}
+function dowName(iso){
+  const d = parseISO(iso);
+  if(!d) return '';
+  return DOW_NAMES[d.getDay()];
+}
+function isTournamentDay(iso){
+  const d = parseISO(iso);
+  if(!d) return false;
+  return TOURNAMENT_DOW.includes(d.getDay());
+}
+function nextTournamentDate(){
+  const today = todayISO();
+  if(isTournamentDay(today)) return today;
+  for(let i=1; i<=7; i++){
+    const dd = new Date();
+    dd.setDate(dd.getDate() + i);
+    const y = dd.getFullYear();
+    const m = String(dd.getMonth()+1).padStart(2,'0');
+    const day = String(dd.getDate()).padStart(2,'0');
+    const iso = `${y}-${m}-${day}`;
+    if(isTournamentDay(iso)) return iso;
+  }
+  return today;
+}
+
+/* =====================================================================
+   ПОСЕЩАЕМОСТЬ
+   ===================================================================== */
+function getAttendance(playerId){
+  let total = 0;
+  let attended = 0;
+  let excused = 0;
+  GAMES().forEach(t => {
+    const inExcused = Array.isArray(t.excused) && t.excused.includes(playerId);
+    if(inExcused){
+      excused++;
+      return;
+    }
+    total++;
+    if(Array.isArray(t.attendees) && t.attendees.includes(playerId)) attended++;
+  });
+  const percent = total ? Math.round(attended / total * 100) : 0;
+  let status;
+  if(!total && !excused) status = 'none';
+  else if(!total) status = 'high';
+  else if(percent >= 80) status = 'high';
+  else if(percent >= 50) status = 'mid';
+  else if(attended > 0) status = 'low';
+  else status = 'zero';
+  return { attended, total, excused, percent, status };
+}
+const ATT_LABELS = {
+  high:  { label:'Отличная',  cls:'att-high' },
+  mid:   { label:'Средняя',   cls:'att-mid' },
+  low:   { label:'Низкая',    cls:'att-low' },
+  zero:  { label:'Не посещает', cls:'att-zero' },
+  none:  { label:'Нет игр', cls:'att-none' }
+};
+function countByAttendanceStatus(){
+  const counters = { high:0, mid:0, low:0, zero:0, none:0 };
+  state.players.forEach(p=>{ counters[getAttendance(p.id).status]++; });
+  return counters;
+}
+function clanAvgAttendance(){
+  if(!state.players.length || !GAMES().length) return 0;
+  const sum = state.players.reduce((s,p)=> s + getAttendance(p.id).percent, 0);
+  return Math.round(sum / state.players.length);
+}
+
+/* =====================================================================
+   АГРЕГАЦИЯ СТАТИСТИКИ ИГР В ИТОГИ ИГРОКОВ
+   ===================================================================== */
+function addStatsToPlayers(stats){
+  if(!stats || typeof stats !== 'object') return;
+  Object.keys(stats).forEach(pid=>{
+    const p = state.players.find(x=>x.id === pid);
+    if(!p) return;
+    const st = stats[pid];
+    if(!st) return;
+    p.kills   = (p.kills   || 0) + (st.kills   || 0);
+    p.deaths  = (p.deaths  || 0) + (st.deaths  || 0);
+    p.assists = (p.assists || 0) + (st.assists || 0);
+    p.score   = (p.score   || 0) + (st.score   || 0);
+  });
+}
+function subtractStatsFromPlayers(stats){
+  if(!stats || typeof stats !== 'object') return;
+  Object.keys(stats).forEach(pid=>{
+    const p = state.players.find(x=>x.id === pid);
+    if(!p) return;
+    const st = stats[pid];
+    if(!st) return;
+    p.kills   = Math.max(0, (p.kills   || 0) - (st.kills   || 0));
+    p.deaths  = Math.max(0, (p.deaths  || 0) - (st.deaths  || 0));
+    p.assists = Math.max(0, (p.assists || 0) - (st.assists || 0));
+    p.score   = Math.max(0, (p.score   || 0) - (st.score   || 0));
+  });
+}
+
+/* =====================================================================
+   ЗАГРУЗКА / СОХРАНЕНИЕ
+   ===================================================================== */
+function migratePlayer(p){
+  if(!p || typeof p !== 'object') return p;
+  delete p.class; delete p.treasury; delete p.lastActivity; delete p.activityLog;
+
+  if(Array.isArray(p.equipment)){
+    p.equipment.forEach(it=>{
+      if(!it || !it.name) return;
+      const t = (it.type || '').toLowerCase();
+      if(!p.armor  && (t.includes('брон') || t.includes('armor'))) p.armor = it.name;
+      else if(!p.weapon && (t.includes('оруж') || t.includes('weapon'))) p.weapon = it.name;
+      else if(!p.sniper && (t.includes('снайп') || t.includes('sniper'))) p.sniper = it.name;
+    });
+  }
+  delete p.equipment;
+
+  if(typeof p.build  !== 'string') p.build  = '';
+  if(typeof p.armor  !== 'string') p.armor  = '';
+  if(typeof p.weapon !== 'string') p.weapon = '';
+  if(typeof p.sniper !== 'string') p.sniper = '';
+  return p;
+}
+function migrateGame(t){
+  if(!t || typeof t !== 'object') return null;
+  let stage = t.stage;
+  if(stage !== 1 && stage !== 2 && stage !== 3) stage = null;
+  const result = (t.result === 'win' || t.result === 'loss') ? t.result : null;
+  return {
+    id: t.id || uid('t'),
+    date: t.date || todayISO(),
+    name: t.name || '',
+    note: t.note || '',
+    attendees: Array.isArray(t.attendees) ? t.attendees.slice() : [],
+    excused: Array.isArray(t.excused) ? t.excused.slice() : [],
+    stats: (t.stats && typeof t.stats === 'object') ? t.stats : {},
+    stage,
+    map: typeof t.map === 'string' ? t.map : '',
+    result
+  };
+}
+function migrateConfig(parsedConfig){
+  const merged = Object.assign({}, DEFAULT_CONFIG, parsedConfig || {});
+  ['ranks','builds','armors','weapons','snipers','maps'].forEach(k=>{
+    if(!Array.isArray(merged[k])) merged[k] = DEFAULT_CONFIG[k].slice();
+  });
+  if(!merged.ranks.length) merged.ranks = DEFAULT_CONFIG.ranks.slice();
+  if(!merged.maps.length) merged.maps = DEFAULT_CONFIG.maps.slice();
+  delete merged.equipment;
+
+  let rp = merged.rolePermissions;
+  if(!rp || typeof rp !== 'object'){
+    rp = {};
+    merged.ranks.forEach(r=>{ rp[r] = {}; PERMISSION_KEYS.forEach(k=> rp[r][k] = false); });
+  }
+  const fresh = {};
+  merged.ranks.forEach(r=>{
+    const current = rp[r] || {};
+    fresh[r] = {};
+    PERMISSION_KEYS.forEach(k=>{
+      if(k === 'tournaments' && current.tournaments === undefined && current.activity !== undefined){
+        fresh[r][k] = !!current.activity;
+      } else {
+        fresh[r][k] = !!current[k];
+      }
+    });
+  });
+  merged.rolePermissions = fresh;
+
+  return {
+    ranks:   merged.ranks.slice(),
+    builds:  merged.builds.slice(),
+    armors:  merged.armors.slice(),
+    weapons: merged.weapons.slice(),
+    snipers: merged.snipers.slice(),
+    maps:    merged.maps.slice(),
+    rolePermissions: merged.rolePermissions
+  };
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed.players)) state.players = parsed.players.map(migratePlayer);
+      if(Array.isArray(parsed.squads)) state.squads = parsed.squads;
+      if(Array.isArray(parsed.tournaments)) state.tournaments = parsed.tournaments.map(migrateGame).filter(Boolean);
+      if(parsed.config) state.config = migrateConfig(parsed.config);
+    }
+  }catch(e){ console.warn('loadState', e); }
+  state.config = migrateConfig(state.config);
+  try{
+    const s = JSON.parse(localStorage.getItem(SORT_KEY) || 'null');
+    if(s && s.key){ sortKey = s.key; sortDir = s.dir || 'desc'; }
+  }catch(e){}
+}
+function saveState(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){} }
+function saveSort(){ try{ localStorage.setItem(SORT_KEY, JSON.stringify({key:sortKey, dir:sortDir})); }catch(e){} }
+function saveSession(){ try{ localStorage.setItem(SESSION_KEY, JSON.stringify(session)); }catch(e){} }
+
+/* =====================================================================
+   НАВИГАЦИЯ
+   ===================================================================== */
+const VIEW_TITLES = {
+  dashboard:['Дашборд','Обзор статистики клана'],
+  attendance:['Посещаемость','Отметки: был / отгул / не был'],
+  results:['Результаты','Сводка по очкам и худшие результаты'],
+  games:['Игры','Клановые войны ЧТ–СБ, винрейт по картам'],
+  roster:['Состав','Все игроки клана'],
+  squads:['Отряды','Группировка бойцов'],
+  equipment:['Снаряжение','Сборки, брони, оружие, снайперки'],
+  settings:['Настройки','Справочники, права и данные']
+};
+const VIEWS = ['dashboard','attendance','results','games','roster','squads','equipment','settings'];
+
+function switchView(viewName){
+  if(!VIEWS.includes(viewName)) viewName = 'dashboard';
+  document.querySelectorAll('.nav-item').forEach(b=>{
+    if(b.dataset.view === viewName) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+  VIEWS.forEach(v=>{
+    const el = document.getElementById('view-' + v);
+    if(!el) return;
+    if(v === viewName) el.classList.add('active');
+    else el.classList.remove('active');
+  });
+  const t = VIEW_TITLES[viewName];
+  document.getElementById('topTitle').textContent = t[0];
+  document.getElementById('topSub').textContent = t[1];
+  try{
+    if(viewName === 'dashboard')  renderDashboard();
+    if(viewName === 'attendance') renderAttendanceView();
+    if(viewName === 'results')    renderResults();
+    if(viewName === 'games')      renderGamesView();
+    if(viewName === 'roster')     renderRoster();
+    if(viewName === 'squads')     renderSquads();
+    if(viewName === 'equipment')  renderEquipmentTable();
+    if(viewName === 'settings')   renderConfig();
+  }catch(e){ console.error('render error', e); }
+  try{ localStorage.setItem(VIEW_KEY, viewName); }catch(e){}
+}
+function bindNavigation(){
+  const container = document.getElementById('navContainer');
+  if(!container || container.dataset.bound === '1') return;
+  container.dataset.bound = '1';
+  container.addEventListener('click', e=>{
+    const item = e.target.closest('.nav-item');
+    if(!item) return;
+    switchView(item.dataset.view);
+  });
+  container.addEventListener('keydown', e=>{
+    if(e.key !== 'Enter' && e.key !== ' ') return;
+    const item = e.target.closest('.nav-item');
+    if(!item) return;
+    e.preventDefault();
+    switchView(item.dataset.view);
+  });
+}
+
+/* =====================================================================
+   ЛОГИН / ПОЛЬЗОВАТЕЛЬ
+   ===================================================================== */
+function openLoginModal(){
+  const roleSel = document.getElementById('loginRole');
+  if(!roleSel) return;
+  roleSel.innerHTML = ['Лидер','Полковник','Офицер','Боец']
+    .map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+
+  document.getElementById('loginPassword').value = '';
+  const err = document.getElementById('loginError');
+  err.style.display = 'none';
+  err.textContent = '';
+
+  document.getElementById('loginModal').classList.add('active');
+  setTimeout(()=> document.getElementById('loginPassword').focus(), 150);
+}
+
+function doLogin(){
+  const role = document.getElementById('loginRole').value;
+  const pwd  = document.getElementById('loginPassword').value;
+  const err  = document.getElementById('loginError');
+
+  const showError = (msg) => {
+    err.textContent = msg;
+    err.style.display = 'block';
+  };
+  err.style.display = 'none';
+
+  if(!role){ showError('Выберите роль'); return; }
+  const expected = ROLE_PASSWORDS[role];
+  if(!expected){ showError('Неизвестная роль'); return; }
+  if(pwd !== expected){
+    showError('❌ Неверный пароль для роли «' + role + '»');
+    return;
+  }
+
+  session.role = role;
+  session.playerId = null;
+  session.playerName = role;
+  session.loggedIn = true;
+  saveSession();
+
+  // Закрываем логин напрямую
+  document.getElementById('loginModal').classList.remove('active');
+
+  updateUserInfo();
+  applyEditRights();
+  updateRoleBadge();
+  renderAll();
+}
+
+function logout(){
+  session = { role: 'Лидер', playerId: null, playerName: '', loggedIn: false };
+  try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
+  updateUserInfo();
+  openLoginModal();
+}
+
+function updateUserInfo(){
+  const el = document.getElementById('userInfo');
+  if(!el) return;
+  if(!session.loggedIn){
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = `
+    <div class="user-badge">
+      <span class="user-name">👤 ${escapeHtml(session.playerName || session.role || 'Гость')}</span>
+      <span class="rank-badge rank-${cssSafe(session.role)}">${escapeHtml(session.role)}</span>
+    </div>`;
+}
+
+/* =====================================================================
+   РОЛЬ
+   ===================================================================== */
+function initRoleSwitcher(){ /* роль задаётся входом */ }
+function setRole(role){
+  session.role = role;
+  applyEditRights();
+  updateRoleBadge();
+  renderAll();
+}
+function updateRoleBadge(){
+  const badge = document.getElementById('roleBadge');
+  if(!badge) return;
+  if(anyEditRights()){ badge.textContent = '✎ Редактирование'; badge.className = 'role-badge edit'; }
+  else { badge.textContent = '👁 Просмотр'; badge.className = 'role-badge view'; }
+}
+function applyEditRights(){
+  document.querySelectorAll('[data-perm]').forEach(el=>{ el.style.display = can(el.dataset.perm) ? '' : 'none'; });
+  document.querySelectorAll('[data-perm-block]').forEach(el=>{ el.style.display = can(el.dataset.permBlock) ? '' : 'none'; });
+}
+
+/* =====================================================================
+   РАСЧЁТЫ
+   ===================================================================== */
+function calcKD(p){
+  if(!p.deaths) return p.kills > 0 ? p.kills.toFixed(2) : '0.00';
+  return (p.kills / p.deaths).toFixed(2);
+}
+function totalScore(){ return state.players.reduce((s,p)=> s + (+p.score||0), 0); }
+function totalKills(){ return state.players.reduce((s,p)=> s + (+p.kills||0), 0); }
+function totalDeaths(){ return state.players.reduce((s,p)=> s + (+p.deaths||0), 0); }
+function totalAssists(){ return state.players.reduce((s,p)=> s + (+p.assists||0), 0); }
+function avgKD(){
+  if(!state.players.length) return '0.00';
+  const totalD = totalDeaths();
+  if(!totalD) return totalKills().toFixed(2);
+  return (totalKills() / totalD).toFixed(2);
+}
+function getSquadName(id){ const sq = SQUADS().find(s=>s.id === id); return sq ? sq.name : ''; }
+
+/* =====================================================================
+   ФИЛЬТРЫ
+   ===================================================================== */
+function refreshFilters(){
+  const rSel = document.getElementById('rankFilter');
+  const sSel = document.getElementById('squadFilter');
+  if(!rSel || !sSel) return;
+  const prevR = rSel.value, prevS = sSel.value;
+  rSel.innerHTML = '<option value="">Все звания</option>' + RANKS().map(r=>`<option>${escapeHtml(r)}</option>`).join('');
+  sSel.innerHTML = '<option value="">Все отряды</option><option value="__none__">Без отряда</option>' +
+    SQUADS().map(s=>`<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('');
+  if(RANKS().includes(prevR)) rSel.value = prevR;
+  if(prevS === '__none__' || SQUADS().some(s=>s.id===prevS)) sSel.value = prevS;
+}
+
+/* =====================================================================
+   ДАШБОРД
+   ===================================================================== */
+function renderSummary(){
+  const pc = state.players.length || 1;
+  const avgK = totalKills() / pc;
+  const avgD = totalDeaths() / pc;
+  const avgA = totalAssists() / pc;
+  const avgS = totalScore() / pc;
+  const cards = [
+    { label:'👥 Игроков', value: state.players.length, cls:'' },
+    { label:'🏆 Общий счёт', value: totalScore().toLocaleString('ru'), cls:'red' },
+    { label:'💀 Убийств', value: totalKills().toLocaleString('ru'), cls:'' },
+    { label:'⚰️ Смертей', value: totalDeaths().toLocaleString('ru'), cls:'' },
+    { label:'📈 К/Д', value: avgKD(), cls:'gold' },
+    { label:'⚔️ Ср. убийств', value: avgK.toFixed(1), cls:'' },
+    { label:'☠️ Ср. смертей', value: avgD.toFixed(1), cls:'' },
+    { label:'🤝 Ср. помощь', value: avgA.toFixed(1), cls:'' },
+    { label:'🏅 Ср. счёт', value: Math.round(avgS).toLocaleString('ru'), cls:'green' },
+    { label:'🎮 Игр', value: GAMES().length, cls:'' },
+    { label:'📊 Средняя посещаемость', value: clanAvgAttendance() + '%', cls:'green' }
+  ];
+  document.getElementById('summaryCards').innerHTML = cards.map(c=>
+    `<div class="card ${c.cls}"><div class="label">${c.label}</div><div class="value ${c.cls}">${c.value}</div></div>`
+  ).join('');
+  document.getElementById('sidebarStats').innerHTML = `
+    <div class="stat-row"><span>Игроков:</span><b>${state.players.length}</b></div>
+    <div class="stat-row"><span>Отрядов:</span><b>${SQUADS().length}</b></div>
+    <div class="stat-row"><span>Игр:</span><b>${GAMES().length}</b></div>
+    <div class="stat-row"><span>Средн. посещ.:</span><b class="hi">${clanAvgAttendance()}%</b></div>
+    <div class="stat-row"><span>Общий счёт:</span><b>${totalScore().toLocaleString('ru')}</b></div>
+  `;
+  const navBadge = document.getElementById('navGamesBadge');
+  if(navBadge){
+    const total = GAMES().length;
+    if(total > 0){ navBadge.style.display = ''; navBadge.textContent = total; }
+    else { navBadge.style.display = 'none'; }
+  }
+}
+function playerHaystack(p){
+  return (p.nickname + ' ' + (p.build||'') + ' ' + (p.armor||'') + ' ' + (p.weapon||'') + ' ' + (p.sniper||'') + ' ' + (p.note||'') + ' ' + getSquadName(p.squadId)).toLowerCase();
+}
+function renderAttendanceCell(p){
+  const a = getAttendance(p.id);
+  const barCls = a.percent >= 80 ? 'high' : a.percent >= 50 ? 'mid' : 'low';
+  const exc = a.excused ? `<span style="color:#ffd93d" title="Отгулов: ${a.excused}">🕐${a.excused}</span> · ` : '';
+  return `
+    <div class="att-cell">
+      <div class="att-bar"><div class="att-bar-fill ${barCls}" style="width:${a.percent}%"></div></div>
+      <div class="att-text"><span>${exc}${a.attended} / ${a.total}</span><span class="att-pct">${a.percent}%</span></div>
+    </div>`;
+}
+function renderDashboard(){
+  renderSummary();
+  const search = (document.getElementById('searchInput').value || '').toLowerCase();
+  const rankF  = document.getElementById('rankFilter').value;
+  const squadF = document.getElementById('squadFilter').value;
+  const attF   = document.getElementById('attendanceFilter').value;
+
+  let list = state.players.filter(p=>{
+    const hay = playerHaystack(p);
+    const okSearch = !search || hay.includes(search);
+    const okRank   = !rankF || p.rank === rankF;
+    let okSquad = true;
+    if(squadF === '__none__') okSquad = !p.squadId;
+    else if(squadF) okSquad = p.squadId === squadF;
+    let okAtt = true;
+    if(attF) okAtt = getAttendance(p.id).status === attF;
+    return okSearch && okRank && okSquad && okAtt;
+  });
+
+  const rankOrder = {};
+  RANKS().forEach((r,i)=> rankOrder[r] = i);
+  list.sort((a,b)=>{
+    let va, vb;
+    if(sortKey === 'kd'){ va = a.deaths ? a.kills/a.deaths : a.kills; vb = b.deaths ? b.kills/b.deaths : b.kills; }
+    else if(sortKey === 'nickname'){ va = (a.nickname||'').toLowerCase(); vb = (b.nickname||'').toLowerCase(); }
+    else if(sortKey === 'rank'){ va = rankOrder[a.rank] ?? 99; vb = rankOrder[b.rank] ?? 99; }
+    else if(sortKey === 'attendance'){ va = getAttendance(a.id).percent; vb = getAttendance(b.id).percent; }
+    else { va = +a[sortKey] || 0; vb = +b[sortKey] || 0; }
+    if(va < vb) return sortDir === 'asc' ? -1 : 1;
+    if(va > vb) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const canPlayers = can('players');
+  const editableAttr = (id, field) => canPlayers
+    ? `class="num editable" data-id="${id}" data-field="${field}" onclick="startInlineEdit(this)"`
+    : 'class="num"';
+
+  document.getElementById('dashboardBody').innerHTML = list.map((p,i)=>{
+    const actions = `
+      <div class="row-actions">
+        ${canPlayers ? `
+          <button onclick="openPlayerModal('${p.id}')" title="Редактировать">✏️</button>
+          <button class="del" onclick="deletePlayer('${p.id}')" title="Удалить">✕</button>
+        ` : ''}
+      </div>`;
+    const squadName = getSquadName(p.squadId);
+    const squadTag = squadName ? `<span class="squad-tag">🚩 ${escapeHtml(squadName)}</span>` : '';
+    return `<tr>
+      <td><div class="nick-cell"><b>${i+1}. ${escapeHtml(p.nickname)}</b>${squadTag}</div></td>
+      <td><span class="rank-badge rank-${cssSafe(p.rank)}">${escapeHtml(p.rank)}</span></td>
+      <td ${editableAttr(p.id,'kills')}>${p.kills}</td>
+      <td ${editableAttr(p.id,'deaths')}>${p.deaths}</td>
+      <td ${editableAttr(p.id,'assists')}>${p.assists}</td>
+      <td class="score-cell ${canPlayers?'editable':''}" ${canPlayers?`data-id="${p.id}" data-field="score" onclick="startInlineEdit(this)"`:''}>${(+p.score).toLocaleString('ru')}</td>
+      <td class="kd-cell">${calcKD(p)}</td>
+      <td>${renderAttendanceCell(p)}</td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="9" class="empty">Нет игроков${canPlayers ? '. Нажмите «+ Добавить игрока».' : '.'}</td></tr>`;
+
+  document.querySelectorAll('[id^="arr-"]').forEach(e=> e.textContent = '');
+  const arr = document.getElementById('arr-' + sortKey);
+  if(arr) arr.textContent = sortDir === 'asc' ? '▲' : '▼';
+}
+function sortBy(key){
+  if(sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortKey = key; sortDir = 'desc'; }
+  saveSort();
+  renderDashboard();
+}
+
+/* =====================================================================
+   ПОСЕЩАЕМОСТЬ — VIEW
+   ===================================================================== */
+function renderAttendanceView(){
+  const sel = document.getElementById('attGameSelect');
+  const cont = document.getElementById('attendanceContainer');
+  if(!sel || !cont) return;
+
+  const games = GAMES().slice().sort((a,b)=> (b.date || '').localeCompare(a.date || ''));
+  const prev = sel.value;
+
+  if(!games.length){
+    sel.innerHTML = '<option value="">— Нет игр —</option>';
+    cont.innerHTML = `<div class="empty">Пока нет игр. Нажмите «+ Новая игра» на дашборде или во вкладке «Игры».</div>`;
+    return;
+  }
+
+  sel.innerHTML = games.map(t =>
+    `<option value="${escapeHtml(t.id)}">${formatDate(t.date)} (${dowName(t.date)}) — ${escapeHtml(t.name || 'Игра')}</option>`
+  ).join('');
+  if(prev && games.some(t => t.id === prev)) sel.value = prev;
+
+  const t = games.find(x => x.id === sel.value) || games[0];
+  if(!t) return;
+
+  if(!Array.isArray(t.attendees)) t.attendees = [];
+  if(!Array.isArray(t.excused)) t.excused = [];
+
+  const canEdit = can('tournaments');
+  const total = state.players.length;
+  const attendedCount = t.attendees.length;
+  const excusedCount = t.excused.length;
+  const absentCount = Math.max(0, total - attendedCount - excusedCount);
+
+  const metaBits = [];
+  if(t.stage) metaBits.push(`⚔ Этап ${t.stage}`);
+  if(t.map) metaBits.push(`🗺 ${escapeHtml(t.map)}`);
+  if(t.result === 'win') metaBits.push('🏆 Победа');
+  else if(t.result === 'loss') metaBits.push('💀 Поражение');
+
+  const rows = state.players.map(p=>{
+    const isAtt = t.attendees.includes(p.id);
+    const isExc = t.excused.includes(p.id);
+    const state_ = isAtt ? 'att' : isExc ? 'exc' : 'no';
+    const squadName = getSquadName(p.squadId);
+
+    const btns = canEdit ? `
+      <button class="att-status-btn ${state_==='att'?'active-att':''}"
+              onclick="setPlayerAttendance('${t.id}','${p.id}','att')">✓ Был</button>
+      <button class="att-status-btn ${state_==='exc'?'active-exc':''}"
+              onclick="setPlayerAttendance('${t.id}','${p.id}','exc')">🕐 Отгул</button>
+      <button class="att-status-btn ${state_==='no'?'active-no':''}"
+              onclick="setPlayerAttendance('${t.id}','${p.id}','no')">✕ Не был</button>
+    ` : `<span class="att-badge ${state_==='att'?'att-high':state_==='exc'?'att-mid':'att-zero'}">
+        ${state_==='att'?'✓ Был':state_==='exc'?'🕐 Отгул':'✕ Не был'}
+      </span>`;
+
+    return `<tr>
+      <td><div class="nick-cell"><b>${escapeHtml(p.nickname)}</b></td>
+      <td><span class="rank-badge rank-${cssSafe(p.rank)}">${escapeHtml(p.rank)}</span></td>
+      <td>${squadName ? `🚩 ${escapeHtml(squadName)}` : '<span style="color:var(--muted-2)">—</span>'}</td>
+      <td style="text-align:center">
+        <span class="att-badge ${state_==='att'?'att-high':state_==='exc'?'att-mid':'att-zero'}">
+          ${state_==='att'?'✓ Был':state_==='exc'?'🕐 Отгул':'✕ Не был'}
+        </span>
+      </td>
+      <td><div class="att-btn-group">${btns}</div></td>
+    </tr>`;
+  }).join('');
+
+  cont.innerHTML = `
+    <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      <div class="card green"><div class="label">✓ Присутствовали</div><div class="value green">${attendedCount}</div></div>
+      <div class="card gold"><div class="label">🕐 Отгул</div><div class="value gold">${excusedCount}</div></div>
+      <div class="card red"><div class="label">✕ Отсутствовали</div><div class="value red">${absentCount}</div></div>
+      <div class="card"><div class="label">👥 Всего игроков</div><div class="value">${total}</div></div>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+      <span style="color:var(--muted);font-size:12.5px">
+        Игра: <b style="color:var(--bright)">${escapeHtml(t.name || 'Игра')}</b>
+        · ${formatDate(t.date)} (${dowName(t.date)})
+        ${metaBits.length ? ' · ' + metaBits.join(' · ') : ''}
+      </span>
+      ${!canEdit ? `<span style="color:#ffb84d;font-size:12px">⚠ Ваша роль не позволяет менять отметки</span>` : ''}
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="no-sort">Игрок</th>
+            <th class="no-sort">Ранг</th>
+            <th class="no-sort">Отряд</th>
+            <th class="no-sort" style="text-align:center">Статус</th>
+            <th class="no-sort" style="text-align:right">Отметить</th>
+          </tr>
+        </thead>
+        <tbody>${rows || `<tr><td colspan="5" class="empty">В составе нет игроков</td></tr>`}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function setPlayerAttendance(gameId, playerId, status){
+  if(!can('tournaments')) return;
+  const t = GAMES().find(x => x.id === gameId);
+  if(!t) return;
+  if(!Array.isArray(t.attendees)) t.attendees = [];
+  if(!Array.isArray(t.excused)) t.excused = [];
+
+  t.attendees = t.attendees.filter(x => x !== playerId);
+  t.excused   = t.excused.filter(x => x !== playerId);
+
+  if(status === 'att') t.attendees.push(playerId);
+  else if(status === 'exc') t.excused.push(playerId);
+
+  if(status !== 'att' && t.stats && t.stats[playerId]){
+    const single = {}; single[playerId] = t.stats[playerId];
+    subtractStatsFromPlayers(single);
+    delete t.stats[playerId];
+  }
+
+  saveState();
+  renderAttendanceView();
+  renderDashboard();
+  renderResults();
+  renderGamesView();
+  renderRoster();
+}
+
+function markAllAttended(){
+  if(!can('tournaments')){ alert('Нет прав'); return; }
+  const sel = document.getElementById('attGameSelect');
+  if(!sel || !sel.value) return;
+  const t = GAMES().find(x => x.id === sel.value);
+  if(!t) return;
+  t.attendees = state.players.map(p => p.id);
+  t.excused = [];
+  saveState();
+  renderAttendanceView();
+  renderDashboard();
+  renderResults();
+  renderGamesView();
+  renderRoster();
+}
+function clearAllAttended(){
+  if(!can('tournaments')){ alert('Нет прав'); return; }
+  const sel = document.getElementById('attGameSelect');
+  if(!sel || !sel.value) return;
+  const t = GAMES().find(x => x.id === sel.value);
+  if(!t) return;
+  subtractStatsFromPlayers(t.stats || {});
+  t.attendees = [];
+  t.excused = [];
+  t.stats = {};
+  saveState();
+  renderAttendanceView();
+  renderDashboard();
+  renderResults();
+  renderGamesView();
+  renderRoster();
+}
+
+/* =====================================================================
+   РЕЗУЛЬТАТЫ
+   ===================================================================== */
+const WORST_COUNT = 5;
+function getWorstIds(){
+  if(state.players.length <= WORST_COUNT) return new Set();
+  const sorted = [...state.players].sort((a,b)=>{
+    const sa = +a.score || 0, sb = +b.score || 0;
+    if(sa !== sb) return sa - sb;
+    const ka = a.deaths ? a.kills/a.deaths : a.kills;
+    const kb = b.deaths ? b.kills/b.deaths : b.kills;
+    return ka - kb;
+  });
+  return new Set(sorted.slice(0, WORST_COUNT).map(p=>p.id));
+}
+function renderResults(){
+  const cont = document.getElementById('resultsBody');
+  if(!cont) return;
+  if(!state.players.length){ cont.innerHTML = `<tr><td colspan="8" class="empty">Пока нет участников</td></tr>`; return; }
+  const worstIds = getWorstIds();
+  const sorted = [...state.players].sort((a,b)=>{
+    const sa = +a.score || 0, sb = +b.score || 0;
+    if(sb !== sa) return sb - sa;
+    const ka = a.deaths ? a.kills/a.deaths : a.kills;
+    const kb = b.deaths ? b.kills/b.deaths : b.kills;
+    return kb - ka;
+  });
+  cont.innerHTML = sorted.map((p,i)=>{
+    const isWorst = worstIds.has(p.id);
+    const squadName = getSquadName(p.squadId);
+    const worstBadge = isWorst ? `<span class="worst-badge">худший</span>` : '';
+    return `<tr class="${isWorst ? 'worst-row' : ''}">
+      <td><b>${i+1}</b></td>
+      <td><div class="nick-cell"><b>${escapeHtml(p.nickname)}</b>${worstBadge}</div></td>
+      <td>${squadName ? `🚩 ${escapeHtml(squadName)}` : '<span style="color:var(--muted-2)">—</span>'}</td>
+      <td class="num">${p.kills}</td>
+      <td class="num">${p.deaths}</td>
+      <td class="num">${p.assists}</td>
+      <td class="kd-cell">${calcKD(p)}</td>
+      <td class="score-cell">${(+p.score).toLocaleString('ru')}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* =====================================================================
+   ИГРЫ
+   ===================================================================== */
+function getMapStats(){
+  const stats = {};
+  MAPS().forEach(m => stats[m] = { games: 0, wins: 0, losses: 0 });
+  GAMES().forEach(t => {
+    const map = t.map || '';
+    if(!mapStatsGuard(stats, map)) return;
+    stats[map].games++;
+    if(t.result === 'win') stats[map].wins++;
+    else if(t.result === 'loss') stats[map].losses++;
+  });
+  return stats;
+}
+function mapStatsGuard(stats, map){
+  if(!map) return false;
+  if(!stats[map]) stats[map] = { games: 0, wins: 0, losses: 0 };
+  return true;
+}
+function renderGamesView(){
+  const cardsEl = document.getElementById('gamesSummaryCards');
+  const list = GAMES();
+  const wins = list.filter(t => t.result === 'win').length;
+  const losses = list.filter(t => t.result === 'loss').length;
+  const decided = wins + losses;
+  const overallWr = decided ? Math.round(wins / decided * 100) : 0;
+
+  if(cardsEl){
+    cardsEl.innerHTML = `
+      <div class="card"><div class="label">🎮 Всего игр</div><div class="value">${list.length}</div></div>
+      <div class="card green"><div class="label">🏆 Побед</div><div class="value green">${wins}</div></div>
+      <div class="card red"><div class="label">💀 Поражений</div><div class="value red">${losses}</div></div>
+      <div class="card gold"><div class="label">📊 Общий винрейт</div><div class="value gold">${decided ? overallWr + '%' : '—'}</div></div>
+    `;
+  }
+
+  const mapCont = document.getElementById('mapWinrateContainer');
+  if(mapCont){
+    const ms = getMapStats();
+    const maps = MAPS();
+    if(!maps.length){
+      mapCont.innerHTML = '';
+    } else {
+      const rows = maps.map(m => {
+        const s = ms[m] || { games: 0, wins: 0, losses: 0 };
+        const dec = s.wins + s.losses;
+        const wr = dec ? Math.round(s.wins / dec * 100) : null;
+        const wrCls = wr === null ? '' : (wr >= 60 ? 'wr-high' : wr >= 40 ? 'wr-mid' : 'wr-low');
+        const wrText = wr === null ? '<span class="wr-empty">нет данных</span>' : `<span class="wr-value ${wrCls}">${wr}%</span>`;
+        const barWidth = wr === null ? 0 : wr;
+        return `<tr>
+          <td class="map-name">🗺 ${escapeHtml(m)}</td>
+          <td>${s.games}</td>
+          <td style="color:#8fd88f">${s.wins}</td>
+          <td style="color:#d88f8f">${s.losses}</td>
+          <td>${wrText}<div class="map-wr-bar"><div style="width:${barWidth}%"></div></div></td>
+        </tr>`;
+      }).join('');
+      mapCont.innerHTML = `
+        <table class="map-wr-table">
+          <thead>
+            <tr>
+              <th>Карта</th>
+              <th>Игр</th>
+              <th>Побед</th>
+              <th>Поражений</th>
+              <th>Винрейт</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+  }
+
+  const cont = document.getElementById('gamesContainer');
+  if(!cont) return;
+  const sorted = list.slice().sort((a,b)=> (b.date || '').localeCompare(a.date || ''));
+  if(!sorted.length){
+    cont.innerHTML = `<div class="empty">Пока не отмечено ни одной игры. Нажмите «+ Новая игра».</div>`;
+    return;
+  }
+  const canT = can('tournaments');
+  cont.innerHTML = `<div class="games-grid">
+    ${sorted.map(t=>{
+      const excusedIds = Array.isArray(t.excused) ? t.excused : [];
+      const attendeeNames = (t.attendees || [])
+        .map(id => state.players.find(p=>p.id === id))
+        .filter(Boolean)
+        .map(p=> ({id: p.id, name: p.nickname, hasStats: !!(t.stats && t.stats[p.id])}));
+      const excusedNames = excusedIds
+        .map(id => state.players.find(p=>p.id === id))
+        .filter(Boolean)
+        .map(p => p.nickname);
+
+      const chips = attendeeNames.length
+        ? attendeeNames.map(a => `<span class="t-chip ${a.hasStats ? 'stat-done' : ''}">${escapeHtml(a.name)}${a.hasStats ? ' ✎' : ''}</span>`).join('')
+        : '<span style="color:var(--muted-2);font-size:12px">Никого не отмечено</span>';
+      const excChips = excusedNames.length
+        ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px"><span style="color:var(--muted-2);font-size:11px;align-self:center">🕐 Отгул:</span>` +
+          excusedNames.map(n => `<span class="t-chip" style="border-color:#5a4a1a;color:#ffd93d">${escapeHtml(n)}</span>`).join('') + '</div>'
+        : '';
+
+      const stageBadge = t.stage
+        ? `<span class="gm-badge gm-stage">⚔ Этап ${t.stage}</span>`
+        : `<span class="gm-badge gm-none">Этап не указан</span>`;
+      const mapBadge = t.map
+        ? `<span class="gm-badge gm-map">🗺 ${escapeHtml(t.map)}</span>`
+        : `<span class="gm-badge gm-none">Карта не указана</span>`;
+      const resultBadge = t.result === 'win'
+        ? `<span class="gm-badge gm-win">🏆 Победа</span>`
+        : (t.result === 'loss'
+            ? `<span class="gm-badge gm-loss">💀 Поражение</span>`
+            : `<span class="gm-badge gm-none">Результат не указан</span>`);
+
+      const statsCount = Object.keys(t.stats || {}).length;
+      const actions = canT ? `
+        <div class="t-btn-group">
+          <button class="btn small" onclick="openGameStatsModal('${t.id}')">📝 Статистика${statsCount ? ` (${statsCount})` : ''}</button>
+          <button class="btn small ghost" onclick="openGameModal('${t.id}')">✏️</button>
+          <button class="btn small danger" onclick="deleteGame('${t.id}')">🗑️</button>
+        </div>` : '';
+      return `<div class="game-card">
+        <div class="t-head">
+          <h3>${escapeHtml(t.name || 'Без названия')}</h3>
+          <span class="t-date">${formatDate(t.date)}</span>
+          <span class="t-dow">${dowName(t.date)}</span>
+        </div>
+        <div class="game-meta-row">${stageBadge}${mapBadge}${resultBadge}</div>
+        ${t.note ? `<div class="t-note">${escapeHtml(t.note)}</div>` : '<div class="t-note"></div>'}
+        <div class="t-members">${chips}</div>
+        ${excChips}
+        <div class="t-actions">
+          <span style="color:var(--muted-2);font-size:11px">Участников: ${t.attendees.length}${excusedIds.length ? ` · Отгул: ${excusedIds.length}` : ''}</span>
+          ${actions}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+/* =====================================================================
+   INLINE EDIT
+   ===================================================================== */
+function startInlineEdit(td){
+  if(!can('players')) return;
+  if(td.querySelector('input')) return;
+  const id = td.dataset.id;
+  const field = td.dataset.field;
+  const p = state.players.find(x=>x.id === id);
+  if(!p) return;
+  const current = p[field];
+  const width = td.offsetWidth;
+  td.textContent = '';
+  const inp = document.createElement('input');
+  inp.type = 'number'; inp.min = '0'; inp.value = current;
+  inp.className = 'inline-edit';
+  inp.style.width = Math.max(60, width - 20) + 'px';
+  td.appendChild(inp);
+  inp.focus(); inp.select();
+  let committed = false;
+  function commit(){
+    if(committed) return;
+    committed = true;
+    p[field] = Math.max(0, +inp.value || 0);
+    saveState();
+    renderDashboard(); renderResults(); renderRoster(); renderEquipmentTable();
+  }
+  function cancel(){ committed = true; renderDashboard(); }
+  inp.addEventListener('blur', commit);
+  inp.addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); inp.blur(); }
+    if(e.key === 'Escape'){ e.preventDefault(); cancel(); }
+  });
+}
+
+/* =====================================================================
+   СОСТАВ
+   ===================================================================== */
+function renderRoster(){
+  const canPlayers = can('players');
+  const html = state.players.map(p=>{
+    const att = getAttendance(p.id);
+    const lbl = ATT_LABELS[att.status];
+    const actions = `
+      <button class="btn small" onclick="openProfile('${p.id}')">Профиль</button>
+      ${canPlayers ? `
+        <button class="btn small ghost" onclick="openPlayerModal('${p.id}')">✏️</button>
+        <button class="btn small danger" onclick="deletePlayer('${p.id}')">🗑️</button>
+      ` : ''}`;
+    const squadName = getSquadName(p.squadId);
+    const excTag = att.excused ? ` · 🕐${att.excused} отгул` : '';
+    return `
+    <div class="profile-head" style="margin-bottom:12px">
+      <div class="avatar">${escapeHtml(p.nickname[0]||'?').toUpperCase()}</div>
+      <div class="info" style="flex:1">
+        <h2>${escapeHtml(p.nickname)} <span class="rank-badge rank-${cssSafe(p.rank)}">${escapeHtml(p.rank)}</span></h2>
+        <div class="meta">
+          ${squadName ? `<span>🚩 ${escapeHtml(squadName)}</span>` : ''}
+          ${p.build  ? `<span>🧰 Сборка: <b>${escapeHtml(p.build)}</b></span>` : ''}
+          ${p.armor  ? `<span>🛡 ${escapeHtml(p.armor)}</span>` : ''}
+          ${p.weapon ? `<span>🔫 ${escapeHtml(p.weapon)}</span>` : ''}
+          ${p.sniper ? `<span>🎯 ${escapeHtml(p.sniper)}</span>` : ''}
+          <span>💀 Убийств: <b>${p.kills}</b></span>
+          <span>⚰️ Смертей: <b>${p.deaths}</b></span>
+          <span>📈 К/Д: <b>${calcKD(p)}</b></span>
+          <span>🏆 Очки: <b>${(+p.score).toLocaleString('ru')}</b></span>
+        </div>
+        <div style="margin-top:10px"><span class="att-badge ${lbl.cls}">${lbl.label} · ${att.attended}/${att.total} (${att.percent}%)${excTag}</span></div>
+        ${p.note ? `<div style="margin-top:8px;color:var(--muted);font-size:13px">📝 ${escapeHtml(p.note)}</div>`:''}
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${actions}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('rosterList').innerHTML = html || `<div class="empty">Состав пуст</div>`;
+}
+
+/* =====================================================================
+   ПРОФИЛЬ
+   ===================================================================== */
+function openProfile(id){
+  const p = state.players.find(x=>x.id === id);
+  if(!p) return;
+  currentProfileId = id;
+  switchView('roster');
+  document.getElementById('topTitle').textContent = 'Профиль игрока';
+  document.getElementById('topSub').textContent = p.nickname;
+
+  const canPlayers = can('players');
+  const editBtns = `
+    ${canPlayers ? `<button class="btn ghost" onclick="openPlayerModal('${p.id}')">✏️ Редактировать</button>` : ''}
+  `;
+  const squadName = getSquadName(p.squadId);
+  const att = getAttendance(p.id);
+  const lbl = ATT_LABELS[att.status];
+  const barCls = att.percent >= 80 ? 'high' : att.percent >= 50 ? 'mid' : 'low';
+
+  const lb = (label, value) => `
+    <div class="loadout-box">
+      <div class="lb-label">${label}</div>
+      <div class="lb-value ${value ? '' : 'empty'}">${value ? escapeHtml(value) : 'не указано'}</div>
+    </div>
+  `;
+
+  const games = GAMES().slice().sort((a,b)=> (b.date || '').localeCompare(a.date || ''));
+  const gameRows = games.map(t=>{
+    const inExc = Array.isArray(t.excused) && t.excused.includes(p.id);
+    const attended = Array.isArray(t.attendees) && t.attendees.includes(p.id);
+    const st = (t.stats && t.stats[p.id]) || null;
+    const statLine = st ? `<span style="color:var(--muted);font-family:Consolas,monospace;font-size:11.5px">У:${st.kills} С:${st.deaths} П:${st.assists} О:${st.score}</span>` : '';
+    const resTag = t.result === 'win' ? '<span class="gm-badge gm-win">🏆</span>' : (t.result === 'loss' ? '<span class="gm-badge gm-loss">💀</span>' : '');
+    const statusBadge = attended
+      ? '<span class="att-badge att-high">✓ Был</span>'
+      : inExc
+        ? '<span class="att-badge gm-excused" style="text-transform:uppercase;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;border:1px solid;">🕐 Отгул</span>'
+        : '<span class="att-badge att-zero">✕ Не был</span>';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:9px 14px;background:var(--panel-2);border:1px solid ${attended ? '#3a4046' : inExc ? '#5a4a1a' : 'var(--line)'};border-radius:8px;${(!attended && !inExc) ? 'opacity:.65' : ''}">
+      <span style="font-family:Consolas,monospace;color:#d8dde3;font-weight:600;min-width:90px">${formatDate(t.date)}</span>
+      <span class="t-dow" style="font-size:10px">${dowName(t.date)}</span>
+      <b style="font-size:13px;color:var(--bright);min-width:120px">${escapeHtml(t.name || 'Игра')}</b>
+      ${resTag}
+      <span style="flex:1">${statLine}</span>
+      ${statusBadge}
+    </div>`;
+  }).join('') || `<div class="empty">Пока нет игр</div>`;
+
+  document.getElementById('rosterList').innerHTML = `
+    <button class="btn ghost small" onclick="renderRoster()">← Назад к составу</button>
+    <div class="profile-head" style="margin-top:14px">
+      <div class="avatar" style="width:100px;height:100px;font-size:40px">${escapeHtml(p.nickname[0]||'?').toUpperCase()}</div>
+      <div class="info" style="flex:1">
+        <h2 style="font-size:26px">${escapeHtml(p.nickname)}</h2>
+        <div class="meta" style="margin-top:8px">
+          <span class="rank-badge rank-${cssSafe(p.rank)}">${escapeHtml(p.rank)}</span>
+          ${squadName ? `<span>🚩 ${escapeHtml(squadName)}</span>` : ''}
+        </div>
+        ${p.note ? `<p style="margin-top:10px;color:var(--muted)">📝 ${escapeHtml(p.note)}</p>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">${editBtns}</div>
+    </div>
+
+    <div class="cards">
+      <div class="card"><div class="label">💀 Убийства</div><div class="value">${p.kills}</div></div>
+      <div class="card"><div class="label">⚰️ Смерти</div><div class="value">${p.deaths}</div></div>
+      <div class="card"><div class="label">🤝 Помощь</div><div class="value">${p.assists}</div></div>
+      <div class="card red"><div class="label">📈 К/Д</div><div class="value red">${calcKD(p)}</div></div>
+      <div class="card gold"><div class="label">🏆 Очки</div><div class="value gold">${(+p.score).toLocaleString('ru')}</div></div>
+    </div>
+
+    <h3 class="section-title">🧰 Снаряжение</h3>
+    <div class="loadout-grid">
+      ${lb('Сборка',  p.build)}
+      ${lb('Броня',   p.armor)}
+      ${lb('Оружие',  p.weapon)}
+      ${lb('Снайперка', p.sniper)}
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:26px;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <h3 class="section-title" style="margin:0">🎮 Посещаемость игр</h3>
+      <span class="att-badge ${lbl.cls}">${lbl.label} · ${att.attended} / ${att.total} (${att.percent}%)${att.excused ? ` · 🕐 ${att.excused}` : ''}</span>
+    </div>
+    <div class="att-bar" style="margin-bottom:16px"><div class="att-bar-fill ${barCls}" style="width:${att.percent}%"></div></div>
+    <div style="display:flex;flex-direction:column;gap:6px">${gameRows}</div>
+  `;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* =====================================================================
+   ИГРЫ — CRUD + парсинг
+   ===================================================================== */
+let gamePickerIds = [];
+let gameParsedStats = {};
+
+function fillMapSelect(current){
+  const sel = document.getElementById('t_map');
+  if(!sel) return;
+  const maps = MAPS();
+  sel.innerHTML = '<option value="">— Не выбрана —</option>' +
+    maps.map(m=>`<option ${m===current?'selected':''}>${escapeHtml(m)}</option>`).join('');
+  if(current && !maps.includes(current)){
+    sel.insertAdjacentHTML('beforeend', `<option selected>${escapeHtml(current)}</option>`);
+  }
+}
+function openGameModal(id){
+  if(!can('tournaments')){ alert('Нет прав на управление играми'); return; }
+  const modal = document.getElementById('gameModal');
+  gameParsedStats = {};
+  const parseField = document.getElementById('t_parse_text');
+  if(parseField) parseField.value = '';
+  const pr = document.getElementById('t_parse_result');
+  if(pr){ pr.style.display = 'none'; pr.innerHTML = ''; }
+
+  if(id){
+    const t = GAMES().find(x=>x.id === id);
+    if(!t) return;
+    document.getElementById('gameModalTitle').textContent = 'Редактировать игру';
+    document.getElementById('t_id').value = t.id;
+    document.getElementById('t_date').value = t.date || todayISO();
+    document.getElementById('t_name').value = t.name || '';
+    document.getElementById('t_note').value = t.note || '';
+    document.getElementById('t_stage').value = t.stage ? String(t.stage) : '';
+    document.getElementById('t_result').value = t.result || '';
+    fillMapSelect(t.map || '');
+    gamePickerIds = (t.attendees || []).slice();
+  } else {
+    document.getElementById('gameModalTitle').textContent = 'Новая игра';
+    document.getElementById('t_id').value = '';
+    document.getElementById('t_date').value = nextTournamentDate();
+    document.getElementById('t_name').value = '';
+    document.getElementById('t_note').value = '';
+    document.getElementById('t_stage').value = '';
+    document.getElementById('t_result').value = '';
+    fillMapSelect('');
+    gamePickerIds = [];
+  }
+  renderGamePicker();
+  modal.classList.add('active');
+}
+function renderGamePicker(){
+  const picker = document.getElementById('tournamentPicker');
+  if(!picker) return;
+  if(!state.players.length){
+    picker.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:10px">Сначала добавьте игроков в состав</div>';
+    document.getElementById('t_attendee_count').textContent = '';
+    return;
+  }
+  picker.innerHTML = state.players.map(p=>{
+    const checked = gamePickerIds.includes(p.id) ? 'checked' : '';
+    return `<label class="tourn-picker-row">
+      <input type="checkbox" value="${p.id}" ${checked} onchange="toggleAttendee('${p.id}', this.checked)">
+      <span class="nick">${escapeHtml(p.nickname)}</span>
+      <span class="rank-tag">${escapeHtml(p.rank)}</span>
+    </label>`;
+  }).join('');
+  updateAttendeeCount();
+}
+function toggleAttendee(playerId, checked){
+  if(checked){ if(!gamePickerIds.includes(playerId)) gamePickerIds.push(playerId); }
+  else { gamePickerIds = gamePickerIds.filter(x=> x !== playerId); }
+  updateAttendeeCount();
+}
+function toggleAllAttendees(checked){
+  if(checked) gamePickerIds = state.players.map(p=>p.id);
+  else gamePickerIds = [];
+  document.querySelectorAll('#tournamentPicker input[type="checkbox"]').forEach(cb=>{ cb.checked = checked; });
+  updateAttendeeCount();
+}
+function updateAttendeeCount(){
+  const el = document.getElementById('t_attendee_count');
+  if(el) el.textContent = `Отмечено: ${gamePickerIds.length} / ${state.players.length}`;
+}
+
+/* =====================================================================
+   ПАРСИНГ ТЕКСТА + НЕЧЁТКОЕ СОПОСТАВЛЕНИЕ НИКОВ
+   ===================================================================== */
+function normNick(s){
+  return String(s||'').toLowerCase().replace(/[^a-zа-яё0-9]/g, '');
+}
+function levenshtein(a, b){
+  const m = a.length, n = b.length;
+  if(!m) return n;
+  if(!n) return m;
+  const dp = new Array(n + 1);
+  for(let j = 0; j <= n; j++) dp[j] = j;
+  for(let i = 1; i <= m; i++){
+    let prev = dp[0];
+    dp[0] = i;
+    for(let j = 1; j <= n; j++){
+      const tmp = dp[j];
+      const cost = a[i-1] === b[j-1] ? 0 : 1;
+      dp[j] = Math.min(dp[j] + 1, dp[j-1] + 1, prev + cost);
+      prev = tmp;
+    }
+  }
+  return dp[n];
+}
+function similarity(a, b){
+  if(!a && !b) return 1;
+  const maxLen = Math.max(a.length, b.length);
+  if(!maxLen) return 0;
+  return 1 - levenshtein(a, b) / maxLen;
+}
+function findBestPlayerMatch(nick){
+  if(!nick) return null;
+  let found = state.players.find(p => p.nickname === nick);
+  if(found) return { player: found, exact: true, similarity: 100 };
+  const lower = String(nick).toLowerCase();
+  found = state.players.find(p => (p.nickname||'').toLowerCase() === lower);
+  if(found) return { player: found, exact: true, similarity: 100 };
+  const target = normNick(nick);
+  if(!target) return null;
+  found = state.players.find(p => normNick(p.nickname) === target);
+  if(found) return { player: found, exact: true, similarity: 100 };
+  let best = null;
+  let bestSim = 0;
+  state.players.forEach(p=>{
+    const pn = normNick(p.nickname);
+    if(!pn) return;
+    const sim = similarity(pn, target);
+    if(sim > bestSim){ bestSim = sim; best = p; }
+  });
+  if(best && bestSim >= 0.7){
+    return { player: best, exact: false, similarity: Math.round(bestSim * 100) };
+  }
+  return null;
+}
+function extractStats(nums){
+  if(nums.length >= 5){
+    return { kills: nums[0], deaths: nums[1], assists: nums[2], score: nums[4] };
+  }
+  if(nums.length === 4){
+    return { kills: nums[0], deaths: nums[1], assists: nums[2], score: nums[3] };
+  }
+  if(nums.length === 3){
+    return { kills: nums[0], deaths: nums[1], assists: nums[2], score: nums[0] * 100 };
+  }
+  if(nums.length === 2){
+    return { kills: nums[0], deaths: nums[1], assists: 0, score: nums[0] * 100 };
+  }
+  return null;
+}
+function parseStatLine(line){
+  let s = String(line).trim();
+  if(!s) return null;
+  s = s.replace(/[,\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+  s = s.replace(/^\d{1,4}\s*[\.\)\-\:]?\s+/, '');
+  const m = s.match(/^([A-Za-zА-Яа-яЁё][A-Za-zА-Яа-яЁё0-9_.\-]{0,32})\s+(.+)$/);
+  if(!m) return null;
+  const nickname = m[1];
+  const rest = m[2];
+  const nums = (rest.match(/\d+/g) || []).map(Number);
+  if(nums.length < 2) return null;
+  const st = extractStats(nums);
+  if(!st) return null;
+  return { nickname, ...st };
+}
+function isZeroStats(st){
+  return (!st.kills && !st.deaths && !st.assists && !st.score);
+}
+function parseGameText(){
+  const textEl = document.getElementById('t_parse_text');
+  const resultBox = document.getElementById('t_parse_result');
+  if(!textEl || !resultBox) return;
+  const text = textEl.value;
+  if(!text.trim()){
+    resultBox.style.display = 'block';
+    resultBox.innerHTML = '<div class="pr-err">Вставьте текст в поле выше.</div>';
+    return;
+  }
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const found = [];
+  const foundZero = [];
+  const missing = [];
+
+  lines.forEach(line => {
+    const parsed = parseStatLine(line);
+    if(!parsed) return;
+    const match = findBestPlayerMatch(parsed.nickname);
+    if(match && match.player){
+      const player = match.player;
+      const stats = { kills: parsed.kills, deaths: parsed.deaths, assists: parsed.assists, score: parsed.score };
+      const entry = { nick: parsed.nickname, player, stats, exact: match.exact, similarity: match.similarity };
+      if(isZeroStats(stats)){
+        const dupZ = foundZero.find(f => f.player.id === player.id);
+        if(dupZ){ dupZ.stats = stats; if(match.exact){ dupZ.exact = true; dupZ.similarity = 100; } }
+        else foundZero.push(entry);
+      } else {
+        const dup = found.find(f => f.player.id === player.id);
+        if(dup){ dup.stats = stats; if(match.exact){ dup.exact = true; dup.similarity = 100; } }
+        else found.push(entry);
+      }
+    } else {
+      missing.push(parsed.nickname);
+    }
+  });
+
+  found.forEach(f=>{
+    if(!gamePickerIds.includes(f.player.id)) gamePickerIds.push(f.player.id);
+    gameParsedStats[f.player.id] = f.stats;
+  });
+  renderGamePicker();
+
+  let html = '';
+  if(found.length){
+    const fuzzyCount = found.filter(f=>!f.exact).length;
+    html += `<div class="pr-ok">✓ Засчитаны как посетившие: <b>${found.length}</b>`;
+    if(fuzzyCount) html += ` <span class="pr-fuzzy">(из них по похожести: ${fuzzyCount})</span>`;
+    html += `</div>`;
+    html += found.slice(0, 20).map(f=>{
+      const fuzzyTag = f.exact
+        ? ''
+        : ` <span class="pr-fuzzy">похож на «${escapeHtml(f.player.nickname)}» (${f.similarity}%)</span>`;
+      const namePart = f.exact && f.nick === f.player.nickname
+        ? `<b style="color:var(--bright)">${escapeHtml(f.player.nickname)}</b>`
+        : `<span style="color:var(--muted)">${escapeHtml(f.nick)}</span><span class="pr-arrow">→</span><b style="color:var(--bright)">${escapeHtml(f.player.nickname)}</b>${fuzzyTag}`;
+      return `<div style="color:var(--muted);font-size:11.5px">• ${namePart} — У:${f.stats.kills} С:${f.stats.deaths} П:${f.stats.assists} О:${f.stats.score}</div>`;
+    }).join('');
+    if(found.length > 20) html += `<div style="color:var(--muted-2);font-size:11px">… и ещё ${found.length - 20}</div>`;
+  }
+  if(foundZero.length){
+    html += `<div class="pr-zero" style="margin-top:6px">○ Нулевая статистика — считаются «не был» (${foundZero.length}):</div>`;
+    html += foundZero.slice(0, 10).map(f=>{
+      const fuzzyTag = f.exact
+        ? ''
+        : ` <span class="pr-fuzzy">похож на «${escapeHtml(f.player.nickname)}» (${f.similarity}%)</span>`;
+      const namePart = f.exact && f.nick === f.player.nickname
+        ? `<b style="color:var(--muted)">${escapeHtml(f.player.nickname)}</b>`
+        : `<span style="color:var(--muted-2)">${escapeHtml(f.nick)}</span><span class="pr-arrow">→</span><span style="color:var(--muted)">${escapeHtml(f.player.nickname)}</span>${fuzzyTag}`;
+      return `<div style="color:var(--muted-2);font-size:11px">• ${namePart}</div>`;
+    }).join('');
+    if(foundZero.length > 10) html += `<div style="color:var(--muted-2);font-size:11px">… и ещё ${foundZero.length - 10}</div>`;
+  }
+  if(missing.length){
+    html += `<div class="pr-warn" style="margin-top:6px">⚠ Не найдены в составе (${missing.length}): ${missing.slice(0,10).map(escapeHtml).join(', ')}${missing.length > 10 ? '…' : ''}</div>`;
+  }
+  if(!found.length && !foundZero.length && !missing.length){
+    html = '<div class="pr-err">Не удалось разобрать ни одной строки. Проверьте формат: № Ник У С П Очки Ранг.</div>';
+  }
+  resultBox.style.display = 'block';
+  resultBox.innerHTML = html;
+}
+
+async function saveGame(){
+  if(!can('tournaments')){ alert('Нет прав'); return; }
+  const id = document.getElementById('t_id').value;
+  const date = document.getElementById('t_date').value || nextTournamentDate();
+  const name = document.getElementById('t_name').value.trim();
+  const note = document.getElementById('t_note').value.trim();
+  const stageRaw = document.getElementById('t_stage').value;
+  const stage = (stageRaw === '1' || stageRaw === '2' || stageRaw === '3') ? parseInt(stageRaw, 10) : null;
+  const map = document.getElementById('t_map').value || '';
+  const resultRaw = document.getElementById('t_result').value;
+  const result = (resultRaw === 'win' || resultRaw === 'loss') ? resultRaw : null;
+
+  if(!date){ alert('Выберите дату'); return; }
+  if(!isTournamentDay(date)){
+    const ok = await askConfirm(`Дата ${formatDate(date)} — это ${dowName(date)}, а не ЧТ/ПТ/СБ. Продолжить?`);
+    if(!ok) return;
+  }
+
+  const attendees = gamePickerIds.slice();
+  const parsedClean = {};
+  Object.keys(gameParsedStats).forEach(pid=>{
+    if(attendees.includes(pid)) parsedClean[pid] = gameParsedStats[pid];
+  });
+
+  if(id){
+    const t = GAMES().find(x=>x.id === id);
+    if(!t) return;
+
+    const newStats = {};
+    const oldStats = t.stats || {};
+    Object.keys(oldStats).forEach(pid=>{
+      if(attendees.includes(pid) && !parsedClean[pid]) newStats[pid] = oldStats[pid];
+    });
+    Object.keys(parsedClean).forEach(pid=>{
+      newStats[pid] = parsedClean[pid];
+    });
+
+    subtractStatsFromPlayers(oldStats);
+    addStatsToPlayers(newStats);
+
+    t.date = date;
+    t.name = name || `Игра ${formatDate(date)}`;
+    t.note = note;
+    t.stage = stage;
+    t.map = map;
+    t.result = result;
+    t.attendees = attendees;
+    t.excused = (Array.isArray(t.excused) ? t.excused : []).filter(pid => !attendees.includes(pid));
+    t.stats = newStats;
+  } else {
+    const newStats = {};
+    Object.keys(parsedClean).forEach(pid=>{
+      newStats[pid] = parsedClean[pid];
+    });
+    addStatsToPlayers(newStats);
+
+    const newGame = {
+      id: uid('t'),
+      date,
+      name: name || `Игра ${formatDate(date)}`,
+      note,
+      stage,
+      map,
+      result,
+      attendees,
+      excused: [],
+      stats: newStats
+    };
+    state.tournaments.push(newGame);
+  }
+  saveState();
+  closeModal('gameModal');
+  renderAll();
+}
+async function deleteGame(id){
+  if(!can('tournaments')){ alert('Нет прав'); return; }
+  const t = GAMES().find(x=>x.id === id);
+  if(!t) return;
+  const ok = await askConfirm(`Удалить игру «${t.name || formatDate(t.date)}»? Статистика будет вычтена из итогов игроков.`);
+  if(!ok) return;
+  subtractStatsFromPlayers(t.stats);
+  state.tournaments = state.tournaments.filter(x=>x.id !== id);
+  saveState();
+  renderAll();
+}
+
+/* =====================================================================
+   СТАТИСТИКА ЗА ИГРУ
+   ===================================================================== */
+function openGameStatsModal(gameId){
+  if(!can('tournaments')){ alert('Нет прав'); return; }
+  const t = GAMES().find(x=>x.id === gameId);
+  if(!t) return;
+  if(!t.stats || typeof t.stats !== 'object') t.stats = {};
+  document.getElementById('gs_gameId').value = gameId;
+  const meta = [];
+  if(t.stage) meta.push(`Этап ${t.stage}`);
+  if(t.map) meta.push(`🗺 ${t.map}`);
+  if(t.result === 'win') meta.push('🏆 Победа');
+  else if(t.result === 'loss') meta.push('💀 Поражение');
+  document.getElementById('gameStatsModalTitle').textContent = `Статистика: ${t.name || formatDate(t.date)}`;
+  document.getElementById('gs_gameInfo').innerHTML =
+    `Дата: <b style="color:var(--bright)">${formatDate(t.date)} (${dowName(t.date)})</b> · ` +
+    `Участников: <b style="color:var(--bright)">${(t.attendees||[]).length}</b>` +
+    (meta.length ? ` · ${escapeHtml(meta.join(' · '))}` : '');
+  renderGameStatsBody();
+  document.getElementById('gameStatsModal').classList.add('active');
+}
+function renderGameStatsBody(){
+  const gameId = document.getElementById('gs_gameId').value;
+  const t = GAMES().find(x=>x.id === gameId);
+  const body = document.getElementById('gameStatsBody');
+  if(!body || !t) return;
+  if(!t.attendees || !t.attendees.length){
+    body.innerHTML = `<tr><td colspan="5" class="empty" style="padding:30px 10px">Никто не отмечен в участниках игры.</td></tr>`;
+    return;
+  }
+  body.innerHTML = t.attendees.map(pid=>{
+    const p = state.players.find(x=>x.id === pid);
+    if(!p) return '';
+    const st = (t.stats && t.stats[pid]) || {kills:0, deaths:0, assists:0, score:0};
+    return `<tr>
+      <td class="g-nick">${escapeHtml(p.nickname)}</td>
+      <td><input type="number" min="0" value="${st.kills||0}" data-gpid="${pid}" data-gfield="kills"></td>
+      <td><input type="number" min="0" value="${st.deaths||0}" data-gpid="${pid}" data-gfield="deaths"></td>
+      <td><input type="number" min="0" value="${st.assists||0}" data-gpid="${pid}" data-gfield="assists"></td>
+      <td><input type="number" min="0" value="${st.score||0}" data-gpid="${pid}" data-gfield="score"></td>
+    </tr>`;
+  }).join('');
+}
+function saveGameStats(){
+  if(!can('tournaments')){ alert('Нет прав'); return; }
+  const gameId = document.getElementById('gs_gameId').value;
+  const t = GAMES().find(x=>x.id === gameId);
+  if(!t) return;
+  if(!t.stats || typeof t.stats !== 'object') t.stats = {};
+
+  const newStats = {};
+  document.querySelectorAll('#gameStatsBody input[data-gpid]').forEach(inp=>{
+    const pid = inp.dataset.gpid;
+    const f = inp.dataset.gfield;
+    if(!newStats[pid]) newStats[pid] = {kills:0, deaths:0, assists:0, score:0};
+    newStats[pid][f] = Math.max(0, +inp.value || 0);
+  });
+  Object.keys(newStats).forEach(pid=>{
+    const v = newStats[pid];
+    if(v.kills === 0 && v.deaths === 0 && v.assists === 0 && v.score === 0){
+      delete newStats[pid];
+    }
+  });
+
+  const oldStats = t.stats || {};
+  subtractStatsFromPlayers(oldStats);
+  addStatsToPlayers(newStats);
+
+  t.stats = newStats;
+
+  saveState();
+  closeModal('gameStatsModal');
+  renderAll();
+}
+
+/* =====================================================================
+   МОДАЛКА ИГРОКА
+   ===================================================================== */
+function fillSelect(sel, arr, current){
+  if(!sel) return;
+  const opts = ['<option value="">— Не выбрано —</option>'].concat(
+    arr.map(x=>`<option ${x===current?'selected':''}>${escapeHtml(x)}</option>`)
+  );
+  sel.innerHTML = opts.join('');
+  if(current && !arr.includes(current)){
+    sel.insertAdjacentHTML('beforeend', `<option selected>${escapeHtml(current)}</option>`);
+  }
+}
+function openPlayerModal(id){
+  if(!can('players')){ alert('Нет прав на редактирование игроков'); return; }
+  const modal = document.getElementById('playerModal');
+  fillSelect(document.getElementById('p_rank'), RANKS(), RANKS()[0] || '');
+  fillSelect(document.getElementById('p_build'), BUILDS(), '');
+  fillSelect(document.getElementById('p_armor'), ARMORS(), '');
+  fillSelect(document.getElementById('p_weapon'), WEAPONS(), '');
+  fillSelect(document.getElementById('p_sniper'), SNIPERS(), '');
+
+  if(id){
+    const p = state.players.find(x=>x.id === id);
+    if(!p) return;
+    document.getElementById('playerModalTitle').textContent = 'Редактировать игрока';
+    document.getElementById('p_id').value = p.id;
+    document.getElementById('p_nickname').value = p.nickname;
+    fillSelect(document.getElementById('p_rank'), RANKS(), p.rank);
+    fillSelect(document.getElementById('p_build'), BUILDS(), p.build);
+    fillSelect(document.getElementById('p_armor'), ARMORS(), p.armor);
+    fillSelect(document.getElementById('p_weapon'), WEAPONS(), p.weapon);
+    fillSelect(document.getElementById('p_sniper'), SNIPERS(), p.sniper);
+  } else {
+    document.getElementById('playerModalTitle').textContent = 'Добавить игрока';
+    document.getElementById('p_id').value = '';
+    document.getElementById('p_nickname').value = '';
+  }
+  modal.classList.add('active');
+}
+function savePlayer(){
+  if(!can('players')){ alert('Нет прав'); return; }
+  const id = document.getElementById('p_id').value;
+  const nickname = document.getElementById('p_nickname').value.trim();
+  if(!nickname){ alert('Введите никнейм'); return; }
+  const data = {
+    nickname,
+    rank:   document.getElementById('p_rank').value,
+    build:  document.getElementById('p_build').value,
+    armor:  document.getElementById('p_armor').value,
+    weapon: document.getElementById('p_weapon').value,
+    sniper: document.getElementById('p_sniper').value
+  };
+  if(id){
+    Object.assign(state.players.find(x=>x.id === id), data);
+  } else {
+    state.players.push({
+      id: uid('p'),
+      squadId: null,
+      kills: 0, deaths: 0, assists: 0, score: 0,
+      note: '',
+      ...data
+    });
+  }
+  saveState(); closeModal('playerModal'); renderAll();
+}
+function quickAddRow(){
+  if(!can('players')){ alert('Нет прав'); return; }
+  const id = uid('p');
+  state.players.push({
+    id, nickname: 'Новый_боец',
+    rank: RANKS()[0] || '',
+    build: '', armor: '', weapon: '', sniper: '',
+    squadId: null,
+    kills: 0, deaths: 0, assists: 0, score: 0,
+    note: ''
+  });
+  saveState(); renderAll();
+  setTimeout(()=>openPlayerModal(id), 100);
+}
+async function deletePlayer(id){
+  if(!can('players')){ alert('Нет прав'); return; }
+  const p = state.players.find(x=>x.id === id);
+  if(!p) return;
+  const ok = await askConfirm(`Удалить игрока ${p.nickname}? Его статистика будет удалена из всех игр.`);
+  if(!ok) return;
+  state.players = state.players.filter(x=>x.id !== id);
+  state.tournaments.forEach(t=>{
+    if(Array.isArray(t.attendees)) t.attendees = t.attendees.filter(x=> x !== id);
+    if(Array.isArray(t.excused))   t.excused   = t.excused.filter(x=> x !== id);
+    if(t.stats && t.stats[id]) delete t.stats[id];
+  });
+  saveState(); renderAll();
+}
+
+/* =====================================================================
+   СНАРЯЖЕНИЕ
+   ===================================================================== */
+function renderEquipmentTable(){
+  const cont = document.getElementById('equipmentBody');
+  if(!cont) return;
+  if(!state.players.length){
+    cont.innerHTML = `<tr><td colspan="8" class="empty">Игроков нет</td></tr>`;
+    return;
+  }
+  const canPlayers = can('players');
+  const sorted = [...state.players].sort((a,b)=> (a.nickname||'').localeCompare(b.nickname||'', 'ru'));
+  const lb = (val) => val ? escapeHtml(val) : '<span style="color:var(--muted-2);font-style:italic">—</span>';
+
+  cont.innerHTML = sorted.map(p=>{
+    const squadName = getSquadName(p.squadId);
+    return `<tr>
+      <td><div class="nick-cell"><b>${escapeHtml(p.nickname)}</b></div></td>
+      <td><span class="rank-badge rank-${cssSafe(p.rank)}">${escapeHtml(p.rank)}</span></td>
+      <td>${squadName ? `🚩 ${escapeHtml(squadName)}` : '<span style="color:var(--muted-2)">—</span>'}</td>
+      <td>${lb(p.build)}</td>
+      <td>${lb(p.armor)}</td>
+      <td>${lb(p.weapon)}</td>
+      <td>${lb(p.sniper)}</td>
+      <td>
+        <div class="row-actions">
+          ${canPlayers ? `<button onclick="openPlayerModal('${p.id}')" title="Редактировать">✏️</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* =====================================================================
+   ОТРЯДЫ
+   ===================================================================== */
+function renderSquads(){
+  const cont = document.getElementById('squadsContainer');
+  if(!cont) return;
+  const squads = SQUADS();
+  const canSquads = can('squads');
+  if(!squads.length){
+    cont.innerHTML = `<div class="empty">Пока нет ни одного отряда.${canSquads ? ' Нажмите «+ Создать отряд».' : ''}</div>`;
+    return;
+  }
+  cont.innerHTML = `<div class="squads-grid">
+    ${squads.map(sq=>{
+      const members = state.players.filter(p=>p.squadId === sq.id);
+      members.sort((a,b)=>{
+        const aLead = sq.leader && a.nickname.toLowerCase() === sq.leader.toLowerCase();
+        const bLead = sq.leader && b.nickname.toLowerCase() === sq.leader.toLowerCase();
+        if(aLead && !bLead) return -1;
+        if(!aLead && bLead) return 1;
+        return (a.nickname||'').localeCompare(b.nickname||'', 'ru');
+      });
+      const memberChips = members.map(m=>{
+        const isLeader = sq.leader && m.nickname.toLowerCase() === sq.leader.toLowerCase();
+        return `<span class="member-chip ${isLeader?'leader-chip':''}">${isLeader ? '👑 ' : ''}${escapeHtml(m.nickname)}</span>`;
+      }).join('');
+      const actions = canSquads
+        ? `<button class="btn small ghost" onclick="openSquadModal('${sq.id}')">✏️ Редактировать</button>
+           <button class="btn small danger" onclick="deleteSquad('${sq.id}')">🗑️ Удалить</button>` : '';
+      return `<div class="squad-card">
+        <h3>🚩 ${escapeHtml(sq.name)} <span class="count">${members.length} чел.</span></h3>
+        ${sq.leader ? `<div class="leader">Лидер: <b>${escapeHtml(sq.leader)}</b></div>` : ''}
+        ${sq.description ? `<div class="desc">${escapeHtml(sq.description)}</div>` : '<div class="desc"></div>'}
+        <div class="members">${memberChips || '<span style="color:var(--muted-2);font-size:12px">Нет участников</span>'}</div>
+        <div class="actions">${actions}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+function openSquadModal(id){
+  if(!can('squads')){ alert('Нет прав'); return; }
+  const modal = document.getElementById('squadModal');
+  if(id){
+    const sq = SQUADS().find(s=>s.id===id);
+    if(!sq) return;
+    document.getElementById('squadModalTitle').textContent = 'Редактировать отряд';
+    document.getElementById('sq_id').value = sq.id;
+    document.getElementById('sq_name').value = sq.name;
+    document.getElementById('sq_desc').value = sq.description || '';
+  } else {
+    document.getElementById('squadModalTitle').textContent = 'Новый отряд';
+    document.getElementById('sq_id').value = '';
+    document.getElementById('sq_name').value = '';
+    document.getElementById('sq_desc').value = '';
+  }
+  const leaderSel = document.getElementById('sq_leader');
+  const currentLeader = id ? (SQUADS().find(s=>s.id===id).leader || '') : '';
+  leaderSel.innerHTML = '<option value="">— Не выбран —</option>' +
+    state.players.map(p=>`<option value="${escapeHtml(p.nickname)}" ${p.nickname===currentLeader?'selected':''}>${escapeHtml(p.nickname)}</option>`).join('');
+  const picker = document.getElementById('squadMembersPicker');
+  if(!state.players.length){
+    picker.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:10px">Сначала добавьте игроков</div>';
+  } else {
+    const currentMembers = id ? state.players.filter(p=>p.squadId === id).map(p=>p.id) : [];
+    picker.innerHTML = state.players.map(p=>{
+      const checked = currentMembers.includes(p.id) ? 'checked' : '';
+      return `<label class="squad-member-row">
+        <input type="checkbox" value="${p.id}" ${checked}>
+        <span class="nick">${escapeHtml(p.nickname)}</span>
+        <span class="rank-tag">${escapeHtml(p.rank)}</span>
+      </label>`;
+    }).join('');
+  }
+  modal.classList.add('active');
+}
+function saveSquad(){
+  if(!can('squads')){ alert('Нет прав'); return; }
+  const id = document.getElementById('sq_id').value;
+  const name = document.getElementById('sq_name').value.trim();
+  if(!name){ alert('Введите название отряда'); return; }
+  const leader = document.getElementById('sq_leader').value || '';
+  const description = document.getElementById('sq_desc').value.trim();
+  const memberIds = [];
+  document.querySelectorAll('#squadMembersPicker input[type="checkbox"]').forEach(cb=>{
+    if(cb.checked) memberIds.push(cb.value);
+  });
+  let squadId = id;
+  if(id){
+    const sq = SQUADS().find(s=>s.id===id);
+    if(!sq) return;
+    sq.name = name; sq.leader = leader; sq.description = description;
+  } else {
+    squadId = uid('sq');
+    state.squads.push({ id: squadId, name, leader, description });
+  }
+  state.players.forEach(p=>{
+    if(memberIds.includes(p.id)) p.squadId = squadId;
+    else if(p.squadId === squadId) p.squadId = null;
+  });
+  saveState(); closeModal('squadModal'); renderAll();
+}
+async function deleteSquad(id){
+  if(!can('squads')){ alert('Нет прав'); return; }
+  const sq = SQUADS().find(s=>s.id===id);
+  if(!sq) return;
+  const ok = await askConfirm(`Удалить отряд «${sq.name}»? Игроки останутся в составе.`);
+  if(!ok) return;
+  state.squads = state.squads.filter(s=>s.id !== id);
+  state.players.forEach(p=>{ if(p.squadId === id) p.squadId = null; });
+  saveState(); renderAll();
+}
+
+/* =====================================================================
+   КОНФИГ + МАТРИЦА ПРАВ
+   ===================================================================== */
+function renderConfig(){
+  document.querySelectorAll('[data-config-list]').forEach(cont=>{
+    const key = cont.dataset.configList;
+    const arr = Array.isArray(state.config[key]) ? state.config[key] : [];
+    const canSettings = can('settings');
+    if(!arr.length){ cont.innerHTML = '<div class="config-empty">Список пуст</div>'; return; }
+    cont.innerHTML = arr.map(name=>{
+      const delBtn = canSettings
+        ? `<button type="button" class="del" data-config-remove="${key}" data-value="${escapeHtml(name)}" title="Удалить">✕</button>`
+        : '';
+      return `<div class="config-item"><span class="name">${escapeHtml(name)}</span>${delBtn}</div>`;
+    }).join('');
+  });
+  const head = document.getElementById('permMatrixHead');
+  const body = document.getElementById('permMatrixBody');
+  if(head && body){
+    const roles = RANKS();
+    if(!roles.length){
+      head.innerHTML = '';
+      body.innerHTML = '<tr><td colspan="2" class="config-empty">Сначала добавьте хотя бы одно звание</td></tr>';
+    } else {
+      head.innerHTML = `<tr><th>Звание</th>${PERMISSION_KEYS.map(k=>{
+        const l = PERMISSION_LABELS[k];
+        return `<th>${l.title}<span class="perm-desc">${l.desc}</span></th>`;
+      }).join('')}</tr>`;
+      body.innerHTML = roles.map(role=>{
+        const rp = ROLE_PERMS(role);
+        return `<tr><td>${escapeHtml(role)}</td>${PERMISSION_KEYS.map(k=>`
+          <td><input type="checkbox" data-role="${escapeHtml(role)}" data-perm-key="${k}" ${rp[k]?'checked':''}></td>
+        `).join('')}</tr>`;
+      }).join('');
+    }
+  }
+}
+function bindConfigEvents(){
+  const grid = document.getElementById('configGrid');
+  if(grid && grid.dataset.bound !== '1'){
+    grid.dataset.bound = '1';
+    grid.addEventListener('click', e=>{
+      const addBtn = e.target.closest('[data-config-add]');
+      if(addBtn){ addConfigItem(addBtn.dataset.configAdd); return; }
+      const removeBtn = e.target.closest('[data-config-remove]');
+      if(removeBtn){
+        const key = removeBtn.dataset.configRemove;
+        const value = removeBtn.dataset.value;
+        const item = removeBtn.closest('.config-item');
+        if(item){
+          item.classList.add('removing');
+          setTimeout(()=> removeConfigItemByValue(key, value), 200);
+        } else {
+          removeConfigItemByValue(key, value);
+        }
+      }
+    });
+    grid.addEventListener('keydown', e=>{
+      if(e.key !== 'Enter') return;
+      const inp = e.target.closest('[data-config-input]');
+      if(!inp) return;
+      e.preventDefault();
+      addConfigItem(inp.dataset.configInput);
+    });
+  }
+  const matrix = document.getElementById('permMatrixTable');
+  if(matrix && matrix.dataset.bound !== '1'){
+    matrix.dataset.bound = '1';
+    matrix.addEventListener('change', e=>{
+      const cb = e.target.closest('[data-role][data-perm-key]');
+      if(!cb) return;
+      setRolePermission(cb.dataset.role, cb.dataset.permKey, cb.checked);
+    });
+  }
+}
+function addConfigItem(key){
+  if(!can('settings')){ alert('Нет прав'); return; }
+  if(!Array.isArray(state.config[key])) state.config[key] = [];
+  const inp = document.querySelector(`[data-config-input="${key}"]`);
+  if(!inp) return;
+  const val = (inp.value || '').trim();
+  if(!val){ inp.focus(); return; }
+  if(state.config[key].includes(val)){ alert('Такое значение уже есть'); inp.select(); return; }
+  state.config[key].push(val);
+  inp.value = ''; inp.focus();
+  saveState();
+  refreshFilters(); initRoleSwitcher(); renderConfig();
+  renderDashboard(); renderRoster(); renderGamesView();
+}
+async function removeConfigItemByValue(key, value){
+  if(!can('settings')) return;
+  if(!Array.isArray(state.config[key])) return;
+  let idx = state.config[key].indexOf(value);
+  if(idx === -1){
+    idx = state.config[key].findIndex(x=> String(x) === String(value));
+    if(idx === -1) return;
+  }
+  const ok = await askConfirm(`Удалить «${value}» из справочника?`);
+  if(!ok){ renderConfig(); return; }
+  state.config[key].splice(idx, 1);
+  if(key === 'ranks' && state.config.rolePermissions) delete state.config.rolePermissions[value];
+  if(key === 'ranks' && session.role === value){
+    session.role = RANKS()[0] || '';
+  }
+  saveState();
+  refreshFilters(); initRoleSwitcher(); renderConfig(); renderDashboard(); renderSquads(); renderGamesView();
+  updateRoleBadge(); applyEditRights();
+}
+function setRolePermission(role, key, enabled){
+  if(!can('roles')){ alert('Нет прав'); return; }
+  if(!state.config.rolePermissions[role]){
+    state.config.rolePermissions[role] = {};
+    PERMISSION_KEYS.forEach(k=> state.config.rolePermissions[role][k] = false);
+  }
+  state.config.rolePermissions[role][key] = !!enabled;
+  saveState();
+  updateRoleBadge(); applyEditRights(); renderAll();
+}
+
+/* =====================================================================
+   МОДАЛКИ
+   ===================================================================== */
+function closeModal(id, force){
+  // Модалку логина можно закрыть только принудительно
+  if(id === 'loginModal' && !force) return;
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.remove('active');
+}
+document.querySelectorAll('.modal-bg').forEach(m=>{
+  m.addEventListener('click', e=>{
+    if(e.target === m && m.id !== 'confirmModal' && m.id !== 'loginModal') m.classList.remove('active');
+  });
+});
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape'){
+    document.querySelectorAll('.modal-bg').forEach(m=>{
+      if(m.id !== 'loginModal') m.classList.remove('active');
+    });
+  }
+  // Enter в поле пароля = вход
+  if(e.key === 'Enter'){
+    const lm = document.getElementById('loginModal');
+    if(lm && lm.classList.contains('active')){
+      const pwd = document.getElementById('loginPassword');
+      if(document.activeElement === pwd){
+        e.preventDefault();
+        doLogin();
+      }
+    }
+  }
+});
+
+/* =====================================================================
+   ЭКСПОРТ / ИМПОРТ / ДЕМО / ОЧИСТКА
+   ===================================================================== */
+function exportData(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'clan_data_' + todayISO() + '.json';
+  a.click();
+}
+function exportCSV(){
+  const headers = ['Ник','Ранг','Отряд','Сборка','Броня','Оружие','Снайперка','Убийства','Смерти','Помощь','К/Д','Очки','Посещено игр','Отгулов','Всего игр','Посещаемость %'];
+  const rows = state.players.map(p=>{
+    const a = getAttendance(p.id);
+    return [
+      p.nickname, p.rank, getSquadName(p.squadId) || '',
+      p.build || '', p.armor || '', p.weapon || '', p.sniper || '',
+      p.kills, p.deaths, p.assists, calcKD(p), p.score,
+      a.attended, a.excused, a.total, a.percent
+    ];
+  });
+  downloadCSV(headers, rows, 'clan_data_');
+}
+function exportResultsCSV(){
+  const worstIds = getWorstIds();
+  const sorted = [...state.players].sort((a,b)=>{
+    const sa = +a.score || 0, sb = +b.score || 0;
+    if(sb !== sa) return sb - sa;
+    const ka = a.deaths ? a.kills/a.deaths : a.kills;
+    const kb = b.deaths ? b.kills/b.deaths : b.kills;
+    return kb - ka;
+  });
+  const headers = ['Место','Ник','Отряд','Убийства','Смерти','Помощь','К/Д','Очки','Худший'];
+  const rows = sorted.map((p,i)=>[
+    i+1, p.nickname, getSquadName(p.squadId) || '',
+    p.kills, p.deaths, p.assists, calcKD(p), p.score, worstIds.has(p.id) ? 'да' : ''
+  ]);
+  downloadCSV(headers, rows, 'clan_results_');
+}
+function downloadCSV(headers, rows, prefix){
+  const csv = [headers, ...rows].map(row=>
+    row.map(cell=>{
+      const s = String(cell == null ? '' : cell);
+      return /[",;\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+    }).join(';')
+  ).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = prefix + todayISO() + '.csv';
+  a.click();
+}
+function importData(ev){
+  if(!can('data')){ alert('Нет прав'); ev.target.value=''; return; }
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!data.players) throw new Error('Нет поля players');
+      state.players = data.players.map(migratePlayer);
+      state.squads = Array.isArray(data.squads) ? data.squads : [];
+      state.tournaments = Array.isArray(data.tournaments)
+        ? data.tournaments.map(migrateGame).filter(Boolean) : [];
+      state.config = migrateConfig(data.config || state.config);
+      saveState(); renderAll();
+      alert('Данные загружены!');
+    }catch(err){ alert('Ошибка: ' + err.message); }
+  };
+  reader.readAsText(file);
+  ev.target.value = '';
+}
+async function clearAll(){
+  if(!can('data')){ alert('Нет прав'); return; }
+  const ok = await askConfirm('Удалить ВСЕ данные клана?');
+  if(!ok) return;
+  state.players = []; state.squads = []; state.tournaments = [];
+  saveState(); renderAll();
+}
+async function loadDemo(){
+  if(!can('data')){ alert('Нет прав'); return; }
+  if(state.players.length){
+    const ok = await askConfirm('Заменить текущие данные демо-примерами?');
+    if(!ok) return;
+  }
+  const demo = [
+    ['Серый_Циклоп','Боец','31','7','9','11302'],
+    ['JJJ_RedMod_HHH','Боец','28','12','17','9931'],
+    ['Germuller','Боец','22','8','10','7022'],
+    ['lwtoolife','Боец','17','11','11','6448'],
+    ['AdidasMonster','Боец','13','10','4','6433'],
+    ['КатяТимбер','Боец','17','8','4','6217'],
+    ['Арсений_Кулебяка','Боец','17','10','12','6191'],
+    ['Alesha_Balbes','Офицер','14','10','9','6127'],
+    ['PrimeBlin_','Лидер','6','12','5','6116'],
+    ['Kriptoss','Боец','12','10','7','5747'],
+    ['noemond','Боец','11','4','19','5651'],
+    ['Volodya_Bashmag','Боец','13','8','14','5459'],
+    ['Friack','Полковник','11','9','7','5350'],
+    ['Suundddderr','Боец','11','11','13','4945'],
+    ['Голивудский_Мэн','Боец','13','10','0','4665'],
+    ['Lydoed_NN','Боец','12','11','3','4643'],
+    ['GRINA_PROKOPENKO','Боец','9','10','8','4599'],
+    ['Гостислав_Крутыш','Боец','7','7','12','4422'],
+    ['НЕТ_ДРУЗЕЙ','Боец','9','6','8','4386'],
+    ['Я_теперь_крыса','Боец','6','6','4','4188'],
+    ['SViviDs','Офицер','12','13','5','4124'],
+    ['Arseniy_geleg','Офицер','8','14','6','4124'],
+    ['ОлегАлександрович','Боец','9','5','6','3861'],
+    ['Никита_Мортира','Боец','8','10','8','3859'],
+    ['ВаликОбкурыш','Боец','8','4','10','3574'],
+    ['Dexter_Needle','Офицер','9','8','5','3269'],
+    ['Cheburek_Vlad','Боец','6','11','4','3073'],
+    ['DuuiN','Боец','8','9','1','2958'],
+    ['GigaChadt','Боец','7','8','2','2397']
+  ];
+  state.players = demo.map((r,i)=>({
+    id: 'p_demo_' + i,
+    nickname: r[0], rank: r[1],
+    kills: +r[2], deaths: +r[3], assists: +r[4],
+    score: +r[5],
+    note: '', squadId: null,
+    build: '', armor: '', weapon: '', sniper: ''
+  }));
+  state.players.forEach((p,i)=>{
+    p.build  = DEFAULT_CONFIG.builds[i % DEFAULT_CONFIG.builds.length];
+    p.armor  = DEFAULT_CONFIG.armors[i % DEFAULT_CONFIG.armors.length];
+    p.weapon = DEFAULT_CONFIG.weapons[i % DEFAULT_CONFIG.weapons.length];
+    p.sniper = DEFAULT_CONFIG.snipers[i % DEFAULT_CONFIG.snipers.length];
+  });
+  const leaderP = state.players.find(p=>p.rank==='Лидер');
+  if(leaderP){
+    leaderP.build = 'Штурм';
+    leaderP.armor = 'Броня «Скала»';
+    leaderP.weapon = 'АК-74М';
+    leaderP.sniper = 'СВД';
+  }
+  const sqAlphaId = uid('sq');
+  const sqBravoId = uid('sq');
+  state.squads = [
+    { id: sqAlphaId, name: 'Альфа', leader: 'PrimeBlin_', description: 'Основной ударный отряд' },
+    { id: sqBravoId, name: 'Браво', leader: 'Friack', description: 'Разведка и поддержка' }
+  ];
+  state.players.forEach((p, idx)=>{
+    if(idx < 8) p.squadId = sqAlphaId;
+    else if(idx < 14) p.squadId = sqBravoId;
+  });
+
+  const dayShift = (d, delta)=>{
+    const dt = new Date(d); dt.setDate(dt.getDate() + delta);
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth()+1).padStart(2,'0');
+    const dd = String(dt.getDate()).padStart(2,'0');
+    return `${y}-${m}-${dd}`;
+  };
+  const baseThu = ()=>{
+    const d = new Date();
+    const dow = d.getDay();
+    const delta = ((4 - dow) + 7) % 7;
+    const t = new Date(); t.setDate(t.getDate() + delta);
+    return t;
+  };
+  const base = baseThu();
+  const names = ['КВ против Absolute','КВ против Dark Legion','Турнир за сектор','КВ против Iron Wolves',
+                 'КВ против Синдикат','Турнир за ресурсы','КВ против NoName','КВ против Восход'];
+  const maps = MAPS();
+  state.tournaments = [];
+  for(let i = 0; i < 8; i++){
+    let shiftDays;
+    if(i < 3)       shiftDays = -19 + i;
+    else if(i < 6)  shiftDays = -12 + (i - 3);
+    else            shiftDays = -5 + (i - 6);
+    const dStr = dayShift(base, shiftDays);
+    const attendees = [];
+    const excused = [];
+    state.players.forEach((p, idx)=>{
+      let attend = false;
+      let ex = false;
+      if(idx < 8) attend = true;
+      else if(idx < 14) attend = (i % 3 !== 2);
+      else if(idx < 20) attend = (i % 4 === 0);
+      else attend = (i === 7 && idx === 20);
+      if(!attend && idx >= 20 && idx < 24 && (i % 4 === 2)) ex = true;
+      if(attend) attendees.push(p.id);
+      else if(ex) excused.push(p.id);
+    });
+    state.tournaments.push({
+      id: uid('t'),
+      date: dStr,
+      name: names[i],
+      note: i % 2 ? 'Победа' : '',
+      attendees,
+      excused,
+      stats: {},
+      stage: (i % 3) + 1,
+      map: maps[i % maps.length] || '',
+      result: i % 3 === 0 ? 'loss' : 'win'
+    });
+  }
+  saveState(); renderAll();
+  alert('Демо-данные загружены!');
+}
+
+/* =====================================================================
+   RENDER ALL
+   ===================================================================== */
+function renderAll(){
+  refreshFilters();
+  renderDashboard();
+  renderAttendanceView();
+  renderResults();
+  renderGamesView();
+  renderRoster();
+  renderSquads();
+  renderEquipmentTable();
+  renderConfig();
+  updateRoleBadge();
+  applyEditRights();
+}
+
+/* =====================================================================
+   СТАРТ
+   ===================================================================== */
+(function init(){
+  loadState();
+
+  // Восстановление сессии (только роли с валидным паролем)
+  try{
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if(saved && saved.loggedIn && saved.role && ROLE_PASSWORDS[saved.role]){
+      session.role = saved.role;
+      session.playerId = null;
+      session.playerName = saved.role;
+      session.loggedIn = true;
+    } else {
+      session = { role: 'Лидер', playerId: null, playerName: '', loggedIn: false };
+    }
+  }catch(e){
+    session = { role: 'Лидер', playerId: null, playerName: '', loggedIn: false };
+  }
+
+  bindNavigation();
+  bindConfigEvents();
+  refreshFilters();
+
+  updateUserInfo();
+
+  let savedView = 'dashboard';
+  try{ savedView = localStorage.getItem(VIEW_KEY) || 'dashboard'; }catch(e){}
+  switchView(savedView);
+
+  if(session.loggedIn){
+    document.getElementById('loginModal').classList.remove('active');
+  } else {
+    openLoginModal();
+  }
+
+  applyEditRights();
+  updateRoleBadge();
+  renderAll();
+})();
+
+window.addEventListener('error', e=> console.error('Global error:', e.message));
+</script>
+</body>
+</html>
